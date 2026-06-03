@@ -209,7 +209,6 @@ function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPa
         <StatCard label="Earned" value={fmtEuro(totalEarned)} accent={C.green} icon="💶"/>
         <StatCard label="Expenses" value={fmtEuro(totalExpenses)} accent={C.blue} icon="🧾"/>
         <StatCard label="Paid" value={fmtEuro(totalPaid)} accent="#a78bfa" icon="💙"/>
-        <StatCard label="Owed" value={fmtEuro(balance)} accent={balance>50?C.pink:C.green} icon={balance>50?"🐾":"✨"}/>
       </div>
       <Sect title="🐕 Recent Sessions"><SessionList sessions={recentSessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/></Sect>
       <Sect title="✈️ Recent Airport Trips"><AirportList airports={recentAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/></Sect>
@@ -463,7 +462,7 @@ const S={
   main:{maxWidth:740,margin:"0 auto",padding:"16px 12px 0"},
   card:{background:"white",borderRadius:16,padding:16,marginBottom:16,border:"1.5px solid #fce7f0",boxShadow:"0 4px 20px #f4a7bb11"},
   cardTitle:{margin:0,fontSize:16,fontWeight:800,color:"#b5476a"},
-  cardRow:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16},
+  cardRow:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16},
   statCard:{background:"white",borderRadius:12,padding:"12px 10px",border:"1.5px solid #fce7f0"},
   sectTitle:{fontSize:12,fontWeight:700,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"},
   formGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14},
