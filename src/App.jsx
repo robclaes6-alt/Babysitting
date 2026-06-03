@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const HOURLY_RATE_OLD = 15;
@@ -521,15 +521,7 @@ export default function App() {
       </header>
 
       {/* clock-in banner */}
-      {clockedIn && (
-        <div style={S.clockBanner}>
-          <span>⏱ Clocked in since <strong>{clockedIn.startTime}</strong></span>
-          <div style={{display:"flex",gap:8}}>
-            <button style={S.clockOutBtn} onClick={clockOut}>Clock out now</button>
-            <button style={{...S.clockOutBtn,background:"#c9a0b0"}} onClick={()=>{setClockedIn(null);localStorage.removeItem("yarden_clockin");}}>Reset</button>
-          </div>
-        </div>
-      )}
+      {clockedIn && <ClockBanner clockedIn={clockedIn} clockOut={clockOut} onReset={()=>{setClockedIn(null);localStorage.removeItem("yarden_clockin");}} />}
 
       <nav style={S.nav}>
         {tabs.map(([id,label]) => (
@@ -550,6 +542,8 @@ export default function App() {
         quickLog={quickLog} setQuickLog={setQuickLog}
         newSession={newSession} setNewSession={setNewSession} addSession={()=>{addSession();setQuickLog(null);}}
         newAirport={newAirport} setNewAirport={setNewAirport} addAirport={()=>{addAirport();setQuickLog(null);}}
+        clockedIn={clockedIn} clockIn={clockIn} clockOut={clockOut}
+        setClockedIn={setClockedIn}
       />
 
       {editingSession && <EditModal session={editingSession} onSave={saveEdit} onClose={()=>setEditingSession(null)} />}
@@ -1110,8 +1104,48 @@ function PaymentList({payments,deleteItem,setEditingPayment}) {
   );
 }
 
+// ── Clock Banner ──────────────────────────────────────────────────────────────
+function ClockBanner({clockedIn, clockOut, onReset}) {
+  const [elapsed, setElapsed] = useState("");
+  useEffect(() => {
+    function tick() {
+      const [h,m] = clockedIn.startTime.split(":").map(Number);
+      const start = new Date();
+      start.setHours(h, m, 0, 0);
+      const diff = Math.max(0, Math.floor((new Date() - start) / 1000));
+      const hh = String(Math.floor(diff/3600)).padStart(2,"0");
+      const mm = String(Math.floor((diff%3600)/60)).padStart(2,"0");
+      const ss = String(diff%60).padStart(2,"0");
+      setElapsed(`${hh}:${mm}:${ss}`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [clockedIn]);
+
+  return (
+    <div style={{background:"linear-gradient(135deg,#5db887,#a8d4f5)",padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <span style={{fontSize:24}}>⏱</span>
+        <div>
+          <div style={{color:"white",fontWeight:800,fontSize:15}}>Working since {clockedIn.startTime}</div>
+          <div style={{color:"rgba(255,255,255,0.85)",fontSize:13,fontFamily:"monospace",fontWeight:600}}>{elapsed} elapsed</div>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button style={{background:"white",color:"#5db887",border:"none",borderRadius:10,padding:"8px 18px",fontWeight:800,fontSize:14,cursor:"pointer"}} onClick={clockOut}>
+          ⏹ Clock out
+        </button>
+        <button style={{background:"rgba(255,255,255,0.25)",color:"white",border:"1px solid rgba(255,255,255,0.4)",borderRadius:10,padding:"8px 12px",fontWeight:600,fontSize:13,cursor:"pointer"}} onClick={onReset}>
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Quick Log FAB ─────────────────────────────────────────────────────────────
-function QuickLogFAB({quickLog,setQuickLog,newSession,setNewSession,addSession,newAirport,setNewAirport,addAirport}) {
+function QuickLogFAB({quickLog,setQuickLog,newSession,setNewSession,addSession,newAirport,setNewAirport,addAirport,clockedIn,clockIn,clockOut,setClockedIn}) {
   if (quickLog === "hours") {
     const [sh,sm] = newSession.startTime.split(":").map(Number);
     const [eh,em] = newSession.endTime.split(":").map(Number);
@@ -1187,6 +1221,10 @@ function QuickLogFAB({quickLog,setQuickLog,newSession,setNewSession,addSession,n
   // default: show the floating buttons
   return (
     <div style={{position:"fixed",bottom:24,right:20,display:"flex",flexDirection:"column",gap:10,zIndex:500}}>
+      {!clockedIn
+        ? <button style={{...fabStyle("#5db887","white"),width:56,height:56,fontSize:22,boxShadow:"0 4px 20px rgba(93,184,135,0.5)"}} onClick={clockIn} title="Clock in">⏱</button>
+        : <button style={{...fabStyle("#e8527a","white"),width:56,height:56,fontSize:22,boxShadow:"0 4px 20px rgba(232,82,122,0.5)"}} onClick={clockOut} title="Clock out">⏹</button>
+      }
       <button style={fabStyle("#f4a7bb","#b5476a")} onClick={()=>setQuickLog("hours")} title="Log hours">⏰</button>
       <button style={fabStyle("#a8d4f5","#2a5c8a")} onClick={()=>setQuickLog("airport")} title="Log airport trip">✈️</button>
     </div>
