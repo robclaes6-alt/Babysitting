@@ -144,10 +144,6 @@ export default function App() {
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <button style={S.feedbackBtn} onClick={()=>setShowFeedback(true)}>💬</button>
-            <div style={S.balancePill}>
-              <span style={S.balanceLabel}>Still owed</span>
-              <span style={{...S.balanceAmount,color:balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
-            </div>
           </div>
         </div>
       </header>
@@ -205,8 +201,12 @@ function ClockBanner({clockedIn,clockOut,onReset}){
 function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPaid,balance,recentSessions,recentAirports,allPayments,showHistory,setShowHistory,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
   return(
     <div>
+      <div style={{background:"white",borderRadius:14,padding:"12px 16px",marginBottom:14,border:"2px solid #fce7f0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:12,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>Still owed</span>
+        <span style={{fontSize:24,fontWeight:800,color:balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
+      </div>
       <div style={S.cardRow}>
-        <StatCard label="Earned" value={fmtEuro(totalEarned)} accent={C.green} icon="🌿"/>
+        <StatCard label="Earned" value={fmtEuro(totalEarned)} accent={C.green} icon="💶"/>
         <StatCard label="Expenses" value={fmtEuro(totalExpenses)} accent={C.blue} icon="🧾"/>
         <StatCard label="Paid" value={fmtEuro(totalPaid)} accent="#a78bfa" icon="💙"/>
         <StatCard label="Owed" value={fmtEuro(balance)} accent={balance>50?C.pink:C.green} icon={balance>50?"🐾":"✨"}/>
@@ -234,7 +234,7 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
   return(
     <div>
       <div style={S.card}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}><img src="/dog.png" alt="" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover"}}/><h2 style={S.cardTitle}>Log Working Hours</h2></div>
+        <div style={{marginBottom:16}}><h2 style={S.cardTitle}>Log Working Hours</h2></div>
         {!clockedIn?(
           <button style={{...S.primaryBtn,marginBottom:14,background:"linear-gradient(135deg,#f4a7bb,#f9c8d4)",fontSize:14}} onClick={clockIn}>⏱ Clock in — I'm starting work</button>
         ):(
@@ -272,7 +272,7 @@ function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,deleteIt
   return(
     <div>
       <div style={S.card}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}><img src="/dog.png" alt="" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover"}}/><h2 style={S.cardTitle}>Log Airport Trip ✈️</h2></div>
+        <div style={{marginBottom:16}}><h2 style={S.cardTitle}>Log Airport Trip ✈️</h2></div>
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newAirport.date} onChange={e=>setNewAirport(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="🛫 Airport"><select style={S.input} value={newAirport.airport} onChange={e=>setNewAirport(p=>({...p,airport:e.target.value}))}>{Object.keys(AIRPORTS).map(a=><option key={a}>{a}</option>)}</select></Field>
@@ -290,7 +290,7 @@ function LogPayment({newPayment,setNewPayment,addPayment,allPayments,showHistory
   return(
     <div>
       <div style={S.card}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}><img src="/dog.png" alt="" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover"}}/><h2 style={S.cardTitle}>Register Payment 💰</h2></div>
+        <div style={{marginBottom:16}}><h2 style={S.cardTitle}>Register Payment 💰</h2></div>
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newPayment.date} onChange={e=>setNewPayment(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={newPayment.amount} placeholder="0.00" onChange={e=>setNewPayment(p=>({...p,amount:e.target.value}))}/></Field>
@@ -339,7 +339,7 @@ function Analytics({sessions,airports,payments}){
   return(
     <div>
       <div style={{...S.card,background:"linear-gradient(135deg,#fff0f5 0%,#f0f8ff 100%)",border:"1.5px solid #f9c8d4"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}><img src="/dog.png" alt="" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover"}}/><h2 style={{...S.cardTitle,color:"#b5476a"}}>Earnings Stats 📊</h2></div>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}><h2 style={{...S.cardTitle,color:"#b5476a"}}>Earnings Stats 📊</h2></div>
         <p style={{color:"#c97a94",fontSize:13,margin:"0 0 16px"}}>All the numbers! 🐾</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
           <AnalCard label="This month" value={fmtEuro(earnedThis)} accent={C.pink} note={`${hoursThis.toFixed(1)}h worked`}/>
@@ -385,7 +385,7 @@ function Analytics({sessions,airports,payments}){
 
 function SessionList({sessions,deleteItem,setEditingSession}){
   if(!sessions.length)return<p style={S.empty}>No sessions yet 🐾</p>;
-  return(<div style={S.list}>{sessions.map(s=>{const exp=[];if(s.parking>0)exp.push(`🅿️ €${s.parking.toFixed(2)}`);if(s.other>0)exp.push(`📦 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);return(<div key={s.id} style={S.listItem}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={S.listSub}>{s.startTime} – {s.endTime} · {s.hours.toFixed(2)}h · €{s.rate}/hr</span>{exp.length>0&&<span style={{fontSize:10,color:"#c9a0b0",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div>);})}</div>);
+  return(<div style={S.list}>{sessions.map(s=>{const exp=[];if(s.parking>0)exp.push(`🅿️ €${s.parking.toFixed(2)}`);if(s.other>0)exp.push(`📦 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);return(<div key={s.id} style={S.listItem}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={S.listSub}>{s.startTime} – {s.endTime} · {s.hours.toFixed(2)}h</span>{exp.length>0&&<span style={{fontSize:10,color:"#c9a0b0",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div>);})}</div>);
 }
 
 function AirportList({airports,deleteItem,setEditingAirport}){
