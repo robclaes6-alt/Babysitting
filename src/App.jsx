@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebase.js";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from "firebase/firestore";
 
 const AIRPORTS = { Brussels:{km:95,earned:80}, Charleroi:{km:226,earned:120}, Eindhoven:{km:170,earned:120} };
 const FUEL_PER_KM = 0.111408;
@@ -30,7 +30,7 @@ export default function App() {
   const [editingPayment,setEditingPayment]=useState(null);
   const [quickLog,setQuickLog]=useState(null);
   const [showFeedback,setShowFeedback]=useState(false);
-  const [feedbackNotes,setFeedbackNotes]=useState(()=>{try{return JSON.parse(localStorage.getItem("yarden_feedback")||"[]")}catch{return[]}});
+  const [feedbackNotes,setFeedbackNotes]=useState([]);
   const [clockedIn,setClockedIn]=useState(()=>{try{return JSON.parse(localStorage.getItem("yarden_clockin")||"null")}catch{return null}});
   const [newSession,setNewSession]=useState({date:today(),startTime:"16:30",endTime:"20:00",parking:0,other:0});
   const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:0});
@@ -43,6 +43,12 @@ export default function App() {
         setSessions(s.sort((a,b)=>a.date.localeCompare(b.date)));
         setAirports(a.sort((a,b)=>a.date.localeCompare(b.date)));
         setPayments(p.sort((a,b)=>a.date.localeCompare(b.date)));
+        // load feedback
+        const fb=await loadCol("feedback");
+        if(fb.length>0){
+          const notes=fb[0].notes||[];
+          setFeedbackNotes(notes);
+        }
       }catch(e){console.error(e);}
       setLoading(false);
     }
@@ -54,7 +60,12 @@ export default function App() {
   const totalPaid=payments.reduce((s,x)=>s+x.amount,0);
   const balance=totalEarned+totalExpenses-totalPaid;
 
-  function saveFeedback(notes){setFeedbackNotes(notes);localStorage.setItem("yarden_feedback",JSON.stringify(notes));}
+  async function saveFeedback(notes){
+    setFeedbackNotes(notes);
+    try{
+      await setDoc(doc(db,"feedback","main"),{notes});
+    }catch(e){console.error(e);}
+  }
 
   function clockIn(){
     const now=new Date();
