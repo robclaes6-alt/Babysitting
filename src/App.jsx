@@ -220,6 +220,8 @@ function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPa
   const earnedThis = monthNet(thisMonthKey);
   const hoursThis = monthHours(thisMonthKey);
   const earnedLast = monthNet(lastMonthKey);
+  const hoursLast = monthHours(lastMonthKey);
+  const avgHours3 = last3.length ? last3.reduce((s,k)=>s+monthHours(k),0)/last3.length : 0;
 
   return(
     <div>
@@ -229,8 +231,8 @@ function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPa
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
         <MonthCard label="This month" value={fmtEuro(earnedThis)} sub={`${hoursThis.toFixed(1)}h worked`} accent={C.pink}/>
-        <MonthCard label="Last month" value={fmtEuro(earnedLast)} sub="" accent={C.blue}/>
-        <MonthCard label="Avg 3 months" value={fmtEuro(avg3)} sub="complete months" accent={C.green}/>
+        <MonthCard label="Last month" value={fmtEuro(earnedLast)} sub={`${hoursLast.toFixed(1)}h worked`} accent={C.blue}/>
+        <MonthCard label="Avg 3 months" value={fmtEuro(avg3)} sub={`avg ${avgHours3.toFixed(1)}h/month`} accent={C.green}/>
       </div>
       <Sect title="🐕 Recent Sessions"><SessionList sessions={recentSessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/></Sect>
       <Sect title="✈️ Recent Airport Trips"><AirportList airports={recentAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/></Sect>
