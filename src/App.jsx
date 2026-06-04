@@ -199,16 +199,38 @@ function ClockBanner({clockedIn,clockOut,onReset}){
 }
 
 function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPaid,balance,recentSessions,recentAirports,allPayments,showHistory,setShowHistory,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
+  // monthly calculations
+  const now = new Date();
+  const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth()+1).padStart(2,"0")}`;
+
+  function monthNet(k) {
+    const se = sessions.filter(s=>s.date.startsWith(k)).reduce((s,x)=>s+(x.earned||0)+(x.gas||0)+(x.parking||0)+(x.other||0),0);
+    const ae = airports.filter(a=>a.date.startsWith(k)).reduce((s,x)=>s+(x.earned||0)+(x.gas||0)+(x.parking||0),0);
+    return se+ae;
+  }
+  function monthHours(k) { return sessions.filter(s=>s.date.startsWith(k)).reduce((s,x)=>s+x.hours,0); }
+
+  const allMonthKeys = [...new Set([...sessions.map(s=>s.date.slice(0,7)),...airports.map(a=>a.date.slice(0,7))])].sort();
+  const completeKeys = allMonthKeys.filter(k=>k<thisMonthKey);
+  const last3 = completeKeys.slice(-3);
+  const avg3 = last3.length ? last3.reduce((s,k)=>s+monthNet(k),0)/last3.length : 0;
+
+  const earnedThis = monthNet(thisMonthKey);
+  const hoursThis = monthHours(thisMonthKey);
+  const earnedLast = monthNet(lastMonthKey);
+
   return(
     <div>
       <div style={{background:"white",borderRadius:14,padding:"12px 16px",marginBottom:14,border:"2px solid #fce7f0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:12,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>Still owed</span>
         <span style={{fontSize:24,fontWeight:800,color:balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
       </div>
-      <div style={S.cardRow}>
-        <StatCard label="Earned" value={fmtEuro(totalEarned)} accent={C.green} icon="💶"/>
-        <StatCard label="Expenses" value={fmtEuro(totalExpenses)} accent={C.blue} icon="🧾"/>
-        <StatCard label="Paid" value={fmtEuro(totalPaid)} accent="#a78bfa" icon="💙"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+        <MonthCard label="This month" value={fmtEuro(earnedThis)} sub={`${hoursThis.toFixed(1)}h worked`} accent={C.pink}/>
+        <MonthCard label="Last month" value={fmtEuro(earnedLast)} sub="" accent={C.blue}/>
+        <MonthCard label="Avg 3 months" value={fmtEuro(avg3)} sub="complete months" accent={C.green}/>
       </div>
       <Sect title="🐕 Recent Sessions"><SessionList sessions={recentSessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/></Sect>
       <Sect title="✈️ Recent Airport Trips"><AirportList airports={recentAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/></Sect>
@@ -216,6 +238,17 @@ function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPa
         <button style={S.toggleBtn} onClick={()=>setShowHistory(!showHistory)}>{showHistory?"▲ Hide":"▼ Show"} payment history</button>
         {showHistory&&<PaymentList payments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
       </Sect>
+    </div>
+  );
+}
+
+function MonthCard({label,value,sub,accent}){
+  return(
+    <div style={{background:"white",borderRadius:12,padding:"12px 10px",border:`1.5px solid ${accent}33`,position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:accent}}/>
+      <div style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>{label}</div>
+      <div style={{fontSize:16,fontWeight:800,color:accent,lineHeight:1.2}}>{value}</div>
+      {sub&&<div style={{fontSize:10,color:"#bbb",marginTop:3}}>{sub}</div>}
     </div>
   );
 }
