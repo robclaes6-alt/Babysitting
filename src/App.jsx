@@ -236,9 +236,12 @@ function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPa
 
   return(
     <div>
-      <div style={{background:"white",borderRadius:14,padding:"12px 16px",marginBottom:14,border:"2px solid #fce7f0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:12,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>Still owed</span>
-        <span style={{fontSize:24,fontWeight:800,color:balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
+      <div style={{background:"white",borderRadius:14,padding:"12px 16px",marginBottom:14,border:`2px solid ${balance<0?"#ffe0b0":"#fce7f0"}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <span style={{fontSize:12,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>{balance<0?"Overpaid":"Still owed"}</span>
+          {balance<0&&<div style={{fontSize:11,color:"#b87a30",marginTop:2}}>Boss paid €{Math.abs(balance).toFixed(2)} too much</div>}
+        </div>
+        <span style={{fontSize:24,fontWeight:800,color:balance<0?"#b87a30":balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
         <MonthCard label="This month" value={fmtEuro(earnedThis)} sub={`${hoursThis.toFixed(1)}h worked`} accent={C.pink}/>
