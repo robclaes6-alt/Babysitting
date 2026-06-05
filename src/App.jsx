@@ -545,7 +545,7 @@ function QuickLogFAB({quickLog,setQuickLog,newSession,setNewSession,addSession,n
     const info=AIRPORTS[newAirport.airport]||AIRPORTS.Brussels;
     return(<div style={S.overlay} onClick={e=>{if(e.target===e.currentTarget)setQuickLog(null);}}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>✈️ Quick Log Airport</h3><button style={S.closeBtn} onClick={()=>setQuickLog(null)}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={newAirport.date} onChange={e=>setNewAirport(p=>({...p,date:e.target.value}))}/></Field><Field label="🛫 Airport"><select style={S.input} value={newAirport.airport} onChange={e=>setNewAirport(p=>({...p,airport:e.target.value}))}>{Object.keys(AIRPORTS).map(a=><option key={a}>{a}</option>)}</select></Field><Field label="🅿️ Parking"><input style={S.input} type="number" min="0" step="0.01" value={newAirport.parking} onChange={e=>setNewAirport(p=>({...p,parking:e.target.value}))}/></Field></div><div style={S.preview}><span>{newAirport.airport}</span><span style={S.previewAmt}>{fmtEuro(info.earned)}</span></div><button style={S.primaryBtn} onClick={addAirport}>Add Trip 🐾</button></div></div>);
   }
-  return(<div style={{position:"fixed",bottom:90,right:16,display:"flex",flexDirection:"column",gap:10,zIndex:500}}>
+  return(<div style={{position:"fixed",bottom:90,left:16,display:"flex",flexDirection:"column",gap:10,zIndex:500}}>
     {!clockedIn?<button style={{...fabStyle("#5db887","white"),width:54,height:54,fontSize:22,boxShadow:"0 4px 20px rgba(93,184,135,0.5)"}} onClick={clockIn} title="Clock in">⏱</button>:<button style={{...fabStyle("#e8527a","white"),width:54,height:54,fontSize:22,boxShadow:"0 4px 20px rgba(232,82,122,0.5)"}} onClick={clockOut} title="Clock out">⏹</button>}
     <button style={fabStyle("#f4a7bb","#b5476a")} onClick={()=>setQuickLog("hours")} title="Log hours">⏰</button>
     <button style={fabStyle("#a8d4f5","#2a5c8a")} onClick={()=>setQuickLog("airport")} title="Log airport">✈️</button>
@@ -576,7 +576,7 @@ const S={
   sectTitle:{fontSize:12,fontWeight:700,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"},
   formGrid:{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:14},
   label:{fontSize:11,color:"#c9a0b0",fontWeight:700,letterSpacing:.3},
-  input:{background:"#fdf5f8",border:"1.5px solid #fce7f0",borderRadius:10,padding:"10px 12px",color:"#3a2a35",fontSize:15,outline:"none",width:"100%",boxSizing:"border-box",fontFamily:"inherit"},
+  input:{background:"#fdf5f8",border:"1.5px solid #fce7f0",borderRadius:10,padding:"12px 12px",color:"#3a2a35",fontSize:16,outline:"none",width:"100%",boxSizing:"border-box",fontFamily:"inherit",WebkitAppearance:"none"},
   preview:{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fdf5f8",borderRadius:10,padding:"10px 14px",marginBottom:14,color:"#c9a0b0",fontSize:13,border:"1px dashed #fce7f0"},
   previewAmt:{fontSize:20,fontWeight:800,color:"#5db887"},
   primaryBtn:{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f4a7bb,#a8d4f5)",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 3px 12px #f4a7bb44"},
