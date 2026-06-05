@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "./firebase.js";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from "firebase/firestore";
 
-const AIRPORTS = { Brussels:{km:95,earned:80}, Charleroi:{km:226,earned:120}, Eindhoven:{km:170,earned:120} };
+const AIRPORTS = { Brussels:{km:95,earned:90.58}, Charleroi:{km:226,earned:145.18}, Eindhoven:{km:170,earned:140} };
 const FUEL_PER_KM = 0.111408;
 const RATE_CHANGE_DATE = new Date("2025-09-01");
 
@@ -164,9 +164,9 @@ export default function App() {
       <main style={S.main}>
         {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment}/>}
         {tab==="hours"&&<LogHours newSession={newSession} setNewSession={setNewSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession} clockedIn={clockedIn} clockIn={clockIn} clockOut={clockOut}/>}
-        {tab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
+        {tab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={airports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
         {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
-        {tab==="analytics"&&<Analytics sessions={sessions} airports={airports} payments={payments}/>}
+        {tab==="analytics"&&<Analytics sessions={sessions} airports={airports} payments={payments} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid}/>}
       </main>
 
       {/* bottom nav */}
@@ -377,8 +377,10 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
   );
 }
 
-function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,deleteItem,setEditingAirport}){
+function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,allAirports,deleteItem,setEditingAirport}){
   const info=AIRPORTS[newAirport.airport]||AIRPORTS.Brussels;
+  const [showAll,setShowAll]=useState(false);
+  const displayed=showAll?[...allAirports].reverse():recentAirports;
   return(
     <div>
       <div style={S.card}>
@@ -391,7 +393,12 @@ function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,deleteIt
         <div style={S.preview}><span>{newAirport.airport} Airport</span><span style={S.previewAmt}>{fmtEuro(info.earned)}</span></div>
         <button style={S.primaryBtn} onClick={addAirport}>Add Trip 🐾</button>
       </div>
-      <Sect title="Recent Trips"><AirportList airports={recentAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/></Sect>
+      <Sect title={showAll?`All Trips (${allAirports.length})`:"Recent Trips"}>
+        <button style={{...S.toggleBtn,...(showAll?{background:"#fce7f0",color:"#b5476a",borderColor:"#f4a7bb"}:{})}} onClick={()=>setShowAll(p=>!p)}>
+          {showAll?"▲ Recent only":`▼ All ${allAirports.length} trips`}
+        </button>
+        <AirportList airports={displayed} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>
+      </Sect>
     </div>
   );
 }
@@ -416,7 +423,7 @@ function LogPayment({newPayment,setNewPayment,addPayment,allPayments,deleteItem,
   );
 }
 
-function Analytics({sessions,airports,payments}){
+function Analytics({sessions,airports,payments,totalEarned,totalExpenses,totalPaid}){
   const[monthView,setMonthView]=useState("earned");
   const now=new Date();
   const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
@@ -452,6 +459,11 @@ function Analytics({sessions,airports,payments}){
       <div style={{...S.card,background:"linear-gradient(135deg,#fff0f5 0%,#f0f8ff 100%)",border:"1.5px solid #f9c8d4"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}><h2 style={{...S.cardTitle,color:"#b5476a"}}>Earnings Stats 📊</h2></div>
         <p style={{color:"#c97a94",fontSize:13,margin:"0 0 16px"}}>All the numbers! 🐾</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+          <MonthCard label="Total Earned" value={fmtEuro(totalEarned)} sub="all time" accent={C.green}/>
+          <MonthCard label="Total Expenses" value={fmtEuro(totalExpenses)} sub="reimbursed" accent={C.blue}/>
+          <MonthCard label="Total Paid out" value={fmtEuro(totalPaid)} sub="by boss" accent="#a78bfa"/>
+        </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
           <AnalCard label="This month" value={fmtEuro(earnedThis)} accent={C.pink} note={`${hoursThis.toFixed(1)}h worked`}/>
           <AnalCard label="Avg last 3 months" value={fmtEuro(avg3)} accent={C.blue} note="complete months"/>
