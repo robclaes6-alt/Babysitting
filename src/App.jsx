@@ -165,7 +165,7 @@ export default function App() {
         {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment}/>}
         {tab==="hours"&&<LogHours newSession={newSession} setNewSession={setNewSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession} clockedIn={clockedIn} clockIn={clockIn} clockOut={clockOut}/>}
         {tab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
-        {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
+        {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
         {tab==="analytics"&&<Analytics sessions={sessions} airports={airports} payments={payments}/>}
       </main>
 
@@ -245,11 +245,8 @@ function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPa
         <MonthCard label="Last month" value={fmtEuro(earnedLast)} sub={`${hoursLast.toFixed(1)}h worked`} accent={C.blue}/>
         <MonthCard label="Avg 3 months" value={fmtEuro(avg3)} sub={`avg ${avgHours3.toFixed(1)}h/month`} accent={C.green}/>
       </div>
-      <Sect title="🐕 Recent Sessions"><SessionList sessions={recentSessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/></Sect>
-      <Sect title="✈️ Recent Airport Trips"><AirportList airports={recentAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/></Sect>
-      <Sect title="💰 Payments">
-        <button style={S.toggleBtn} onClick={()=>setShowHistory(!showHistory)}>{showHistory?"▲ Hide":"▼ Show"} payment history</button>
-        {showHistory&&<PaymentList payments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
+      <Sect title="📋 Recent Activity">
+        <RecentActivity sessions={recentSessions} airports={recentAirports} payments={allPayments.slice(0,5)} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment}/>
       </Sect>
     </div>
   );
@@ -262,6 +259,71 @@ function MonthCard({label,value,sub,accent}){
       <div style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>{label}</div>
       <div style={{fontSize:16,fontWeight:800,color:accent,lineHeight:1.2}}>{value}</div>
       {sub&&<div style={{fontSize:10,color:"#bbb",marginTop:3}}>{sub}</div>}
+    </div>
+  );
+}
+
+function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
+  // merge and sort all by date descending, take 15 most recent
+  const items = [
+    ...sessions.map(s=>({...s,_type:"session",_sortDate:s.date+s.startTime})),
+    ...airports.map(a=>({...a,_type:"airport",_sortDate:a.date+"00:00"})),
+    ...payments.map(p=>({...p,_type:"payment",_sortDate:p.date+"00:00"})),
+  ].sort((a,b)=>b._sortDate.localeCompare(a._sortDate)).slice(0,15);
+
+  if(!items.length) return <p style={S.empty}>No activity yet 🐾</p>;
+
+  return(
+    <div style={S.list}>
+      {items.map(item=>{
+        if(item._type==="session"){
+          const exp=[];
+          if(item.parking>0)exp.push(`🅿️ €${item.parking.toFixed(2)}`);
+          if(item.other>0)exp.push(`📦 €${item.other.toFixed(2)}`);
+          return(
+            <div key={item.id+"s"} style={S.listItem}>
+              <div style={{...S.listLeft,gap:1}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,background:"#fce7f0",color:"#b5476a",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Session</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
+                <span style={S.listSub}>{item.startTime} – {item.endTime} · {item.hours.toFixed(2)}h</span>
+                {exp.length>0&&<span style={{fontSize:10,color:"#c9a0b0"}}>{exp.join("  ")}</span>}
+              </div>
+              <div style={S.listRight}>
+                <span style={{...S.listAmt,color:C.green}}>{fmtEuro(item.earned)}</span>
+                <button style={S.editBtn} onClick={()=>setEditingSession(item)}>✏️</button>
+                <button style={S.deleteBtn} onClick={()=>deleteItem("session",item.id)}>✕</button>
+              </div>
+            </div>
+          );
+        }
+        if(item._type==="airport"){
+          return(
+            <div key={item.id+"a"} style={S.listItem}>
+              <div style={{...S.listLeft,gap:1}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,background:"#e8f4ff",color:"#2a5c8a",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Airport</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
+                <span style={S.listSub}>{item.airport}{item.parking>0?` · 🅿️ €${item.parking.toFixed(2)}`:""}</span>
+              </div>
+              <div style={S.listRight}>
+                <span style={{...S.listAmt,color:C.blue}}>{fmtEuro(item.earned)}</span>
+                <button style={S.editBtn} onClick={()=>setEditingAirport(item)}>✏️</button>
+                <button style={S.deleteBtn} onClick={()=>deleteItem("airport",item.id)}>✕</button>
+              </div>
+            </div>
+          );
+        }
+        // payment
+        return(
+          <div key={item.id+"p"} style={S.listItem}>
+            <div style={{...S.listLeft,gap:1}}>
+              <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,background:"#f0ecff",color:"#6b48d4",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Payment</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
+            </div>
+            <div style={S.listRight}>
+              <span style={{...S.listAmt,color:"#a78bfa"}}>{fmtEuro(item.amount)}</span>
+              <button style={S.editBtn} onClick={()=>setEditingPayment(item)}>✏️</button>
+              <button style={S.deleteBtn} onClick={()=>deleteItem("payment",item.id)}>✕</button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -331,7 +393,8 @@ function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,deleteIt
   );
 }
 
-function LogPayment({newPayment,setNewPayment,addPayment,allPayments,showHistory,setShowHistory,deleteItem,setEditingPayment}){
+function LogPayment({newPayment,setNewPayment,addPayment,allPayments,deleteItem,setEditingPayment}){
+  const [showHistory, setShowHistory] = useState(true);
   return(
     <div>
       <div style={S.card}>
@@ -511,7 +574,7 @@ const S={
   cardRow:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16},
   statCard:{background:"white",borderRadius:12,padding:"12px 10px",border:"1.5px solid #fce7f0"},
   sectTitle:{fontSize:12,fontWeight:700,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"},
-  formGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14},
+  formGrid:{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:14},
   label:{fontSize:11,color:"#c9a0b0",fontWeight:700,letterSpacing:.3},
   input:{background:"#fdf5f8",border:"1.5px solid #fce7f0",borderRadius:10,padding:"10px 12px",color:"#3a2a35",fontSize:15,outline:"none",width:"100%",boxSizing:"border-box",fontFamily:"inherit"},
   preview:{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fdf5f8",borderRadius:10,padding:"10px 14px",marginBottom:14,color:"#c9a0b0",fontSize:13,border:"1px dashed #fce7f0"},
