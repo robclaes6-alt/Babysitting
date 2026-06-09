@@ -6,7 +6,7 @@ const AIRPORTS = { Brussels:{km:95,earned:90.58}, Charleroi:{km:226,earned:145.1
 const FUEL_PER_KM = 0.111408;
 const RATE_CHANGE_DATE = new Date("2025-09-01");
 
-function fmtDate(d) { return new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}); }
+function fmtDate(d) { return new Date(d).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short",year:"numeric"}); }
 function fmtEuro(n) { return "€"+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 function rateForDate(d) { return new Date(d)>=RATE_CHANGE_DATE?20:15; }
 function today() { return new Date().toISOString().split("T")[0]; }
