@@ -266,8 +266,26 @@ function MonthCard({label,value,sub,accent}){
   );
 }
 
+function weekStart(dateStr) {
+  const d = new Date(dateStr);
+  const day = d.getDay(); // 0=Sun, 1=Mon
+  const diff = (day === 0) ? -6 : 1 - day; // Monday as start
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + diff);
+  return mon.toISOString().split("T")[0];
+}
+
+function WeekDivider({label}){
+  return(
+    <div style={{display:"flex",alignItems:"center",gap:8,margin:"6px 0 2px"}}>
+      <div style={{flex:1,height:1,background:"#fce7f0"}}/>
+      <span style={{fontSize:10,color:"#c9a0b0",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,whiteSpace:"nowrap"}}>📅 Week of {label}</span>
+      <div style={{flex:1,height:1,background:"#fce7f0"}}/>
+    </div>
+  );
+}
+
 function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
-  // merge and sort all by date descending, take 15 most recent
   const items = [
     ...sessions.map(s=>({...s,_type:"session",_sortDate:s.date+s.startTime})),
     ...airports.map(a=>({...a,_type:"airport",_sortDate:a.date+"00:00"})),
@@ -276,14 +294,22 @@ function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession
 
   if(!items.length) return <p style={S.empty}>No activity yet 🐾</p>;
 
+  let lastWeek = null;
   return(
     <div style={S.list}>
       {items.map(item=>{
+        const ws = weekStart(item.date);
+        const showDivider = ws !== lastWeek;
+        lastWeek = ws;
+        const weekLabel = new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+        const divider = showDivider ? <WeekDivider key={"w"+ws} label={weekLabel}/> : null;
+
+        let card;
         if(item._type==="session"){
           const exp=[];
           if(item.parking>0)exp.push(`🅿️ €${item.parking.toFixed(2)}`);
           if(item.other>0)exp.push(`📦 €${item.other.toFixed(2)}`);
-          return(
+          card=(
             <div key={item.id+"s"} style={S.listItem}>
               <div style={{...S.listLeft,gap:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,background:"#fce7f0",color:"#b5476a",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Session</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
@@ -297,9 +323,8 @@ function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession
               </div>
             </div>
           );
-        }
-        if(item._type==="airport"){
-          return(
+        } else if(item._type==="airport"){
+          card=(
             <div key={item.id+"a"} style={S.listItem}>
               <div style={{...S.listLeft,gap:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,background:"#e8f4ff",color:"#2a5c8a",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Airport</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
@@ -312,20 +337,21 @@ function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession
               </div>
             </div>
           );
+        } else {
+          card=(
+            <div key={item.id+"p"} style={S.listItem}>
+              <div style={{...S.listLeft,gap:1}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,background:"#f0ecff",color:"#6b48d4",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Payment</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
+              </div>
+              <div style={S.listRight}>
+                <span style={{...S.listAmt,color:"#a78bfa"}}>{fmtEuro(item.amount)}</span>
+                <button style={S.editBtn} onClick={()=>setEditingPayment(item)}>✏️</button>
+                <button style={S.deleteBtn} onClick={()=>deleteItem("payment",item.id)}>✕</button>
+              </div>
+            </div>
+          );
         }
-        // payment
-        return(
-          <div key={item.id+"p"} style={S.listItem}>
-            <div style={{...S.listLeft,gap:1}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,background:"#f0ecff",color:"#6b48d4",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Payment</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
-            </div>
-            <div style={S.listRight}>
-              <span style={{...S.listAmt,color:"#a78bfa"}}>{fmtEuro(item.amount)}</span>
-              <button style={S.editBtn} onClick={()=>setEditingPayment(item)}>✏️</button>
-              <button style={S.deleteBtn} onClick={()=>deleteItem("payment",item.id)}>✕</button>
-            </div>
-          </div>
-        );
+        return <>{divider}{card}</>;
       })}
     </div>
   );
@@ -508,7 +534,15 @@ function Analytics({sessions,airports,payments,totalEarned,totalExpenses,totalPa
 
 function SessionList({sessions,deleteItem,setEditingSession}){
   if(!sessions.length)return<p style={S.empty}>No sessions yet 🐾</p>;
-  return(<div style={S.list}>{sessions.map(s=>{const exp=[];if(s.parking>0)exp.push(`🅿️ €${s.parking.toFixed(2)}`);if(s.other>0)exp.push(`📦 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);return(<div key={s.id} style={S.listItem}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={S.listSub}>{s.startTime} – {s.endTime} · {s.hours.toFixed(2)}h</span>{exp.length>0&&<span style={{fontSize:10,color:"#c9a0b0",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div>);})}</div>);
+  let lastWeek = null;
+  return(<div style={S.list}>{sessions.map(s=>{
+    const ws=weekStart(s.date);
+    const showDivider=ws!==lastWeek;
+    lastWeek=ws;
+    const weekLabel=new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+    const exp=[];if(s.parking>0)exp.push(`🅿️ €${s.parking.toFixed(2)}`);if(s.other>0)exp.push(`📦 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);
+    return(<>{showDivider&&<WeekDivider key={"w"+ws} label={weekLabel}/>}<div key={s.id} style={S.listItem}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={S.listSub}>{s.startTime} – {s.endTime} · {s.hours.toFixed(2)}h</span>{exp.length>0&&<span style={{fontSize:10,color:"#c9a0b0",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div></>);
+  })}</div>);
 }
 
 function AirportList({airports,deleteItem,setEditingAirport}){
