@@ -59,10 +59,11 @@ export default function App() {
     load();
   },[]);
 
-  const totalEarned=sessions.reduce((s,x)=>s+x.earned,0)+airports.reduce((s,x)=>s+x.earned,0)+activities.filter(a=>!a.excludeFromOwed).reduce((s,x)=>s+(x.amount||0),0);
+  const totalEarned=sessions.reduce((s,x)=>s+x.earned,0)+airports.reduce((s,x)=>s+x.earned,0)+activities.reduce((s,x)=>s+(x.amount||0),0);
   const totalExpenses=sessions.reduce((s,x)=>s+(x.gas||0)+(x.parking||0)+(x.other||0),0)+airports.reduce((s,x)=>s+(x.gas||0)+(x.parking||0),0);
   const totalPaid=payments.reduce((s,x)=>s+x.amount,0);
-  const balance=totalEarned+totalExpenses-totalPaid;
+  const balanceEarned=sessions.reduce((s,x)=>s+x.earned,0)+airports.reduce((s,x)=>s+x.earned,0)+activities.filter(a=>!a.excludeFromOwed).reduce((s,x)=>s+(x.amount||0),0);
+  const balance=balanceEarned+totalExpenses-totalPaid;
 
   async function saveFeedback(notes){
     setFeedbackNotes(notes);
@@ -243,11 +244,12 @@ function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPa
   function monthNet(k) {
     const se = sessions.filter(s=>s.date.startsWith(k)).reduce((s,x)=>s+(x.earned||0)+(x.gas||0)+(x.parking||0)+(x.other||0),0);
     const ae = airports.filter(a=>a.date.startsWith(k)).reduce((s,x)=>s+(x.earned||0)+(x.gas||0)+(x.parking||0),0);
-    return se+ae;
+    const acte = activities.filter(a=>a.dateFrom&&a.dateFrom.startsWith(k)).reduce((s,x)=>s+(x.amount||0),0);
+    return se+ae+acte;
   }
   function monthHours(k) { return sessions.filter(s=>s.date.startsWith(k)).reduce((s,x)=>s+x.hours,0); }
 
-  const allMonthKeys = [...new Set([...sessions.map(s=>s.date.slice(0,7)),...airports.map(a=>a.date.slice(0,7))])].sort();
+  const allMonthKeys = [...new Set([...sessions.map(s=>s.date.slice(0,7)),...airports.map(a=>a.date.slice(0,7)),...activities.filter(a=>a.dateFrom).map(a=>a.dateFrom.slice(0,7))])].sort();
   const completeKeys = allMonthKeys.filter(k=>k<thisMonthKey);
   const last3 = completeKeys.slice(-3);
   const avg3 = last3.length ? last3.reduce((s,k)=>s+monthNet(k),0)/last3.length : 0;
@@ -481,6 +483,7 @@ function Analytics({sessions,airports,payments,totalEarned,totalExpenses,totalPa
   const monthEarned={},monthHours={};
   sessions.forEach(s=>{const k=mk(s.date);monthEarned[k]=(monthEarned[k]||0)+(s.earned||0)+(s.gas||0)+(s.parking||0)+(s.other||0);monthHours[k]=(monthHours[k]||0)+s.hours;});
   airports.forEach(a=>{const k=mk(a.date);monthEarned[k]=(monthEarned[k]||0)+(a.earned||0)+(a.gas||0)+(a.parking||0);});
+  activities.forEach(a=>{if(a.dateFrom){const k=mk(a.dateFrom);monthEarned[k]=(monthEarned[k]||0)+(a.amount||0);}});
   const allKeys=Object.keys(monthEarned).sort();
   const completeKeys=allKeys.filter(k=>k<thisMonth);
   function lm(k){const[y,m]=k.split("-");return new Date(+y,+m-1,1).toLocaleDateString("en",{month:"long",year:"numeric"});}
