@@ -118,7 +118,13 @@ export default function App() {
     await updateItem("activities",id,data);
     setActivities(prev=>prev.map(x=>x.id===id?updated:x));
     setEditingActivity(null);
-  }const{id,...data}=updated;await updateItem("payments",id,data);setPayments(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingPayment(null);}
+  }
+  async function savePaymentEdit(updated){
+    const{id,...data}=updated;
+    await updateItem("payments",id,data);
+    setPayments(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));
+    setEditingPayment(null);
+  }
 
   async function addAirport(){
     const info=AIRPORTS[newAirport.airport]||AIRPORTS.Brussels;
@@ -190,8 +196,8 @@ export default function App() {
       <nav style={S.bottomNav}>
         {tabs.map(([id,icon])=>(
           <button key={id} style={{...S.bottomNavBtn,...(tab===id?S.bottomNavActive:{})}} onClick={()=>setTab(id)}>
-            <span style={{fontSize:20}}>{icon}</span>
-            <span style={{fontSize:10,fontWeight:600}}>{tabLabels[id]}</span>
+            <span style={{fontSize:18}}>{icon}</span>
+            <span style={{fontSize:9,fontWeight:600}}>{tabLabels[id]}</span>
           </button>
         ))}
       </nav>
@@ -747,7 +753,7 @@ const S={
   modal:{background:"white",borderRadius:20,padding:20,width:"min(480px,95vw)",border:"2px solid #fce7f0",boxShadow:"0 20px 60px #f4a7bb33",maxHeight:"90vh",overflowY:"auto"},
   closeBtn:{background:"#fdf5f8",border:"1px solid #fce7f0",borderRadius:8,cursor:"pointer",fontSize:14,color:"#c9a0b0",padding:"4px 10px"},
   feedbackBtn:{background:"white",border:"1.5px solid #fce7f0",borderRadius:10,padding:"6px 10px",fontSize:16,cursor:"pointer"},
-  bottomNav:{position:"fixed",bottom:0,left:0,right:0,background:"white",borderTop:"1.5px solid #fce7f0",display:"flex",justifyContent:"space-around",padding:"8px 0 calc(8px + env(safe-area-inset-bottom))",zIndex:200,boxShadow:"0 -2px 12px #f4a7bb11"},
-  bottomNavBtn:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 0",background:"transparent",border:"none",cursor:"pointer",color:"#c9a0b0"},
+  bottomNav:{position:"fixed",bottom:0,left:0,right:0,background:"white",borderTop:"1.5px solid #fce7f0",display:"flex",justifyContent:"space-around",padding:"6px 0 calc(6px + env(safe-area-inset-bottom))",zIndex:200,boxShadow:"0 -2px 12px #f4a7bb11"},
+  bottomNavBtn:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"2px 0",background:"transparent",border:"none",cursor:"pointer",color:"#c9a0b0",minWidth:0},
   bottomNavActive:{color:"#b5476a"},
 };
