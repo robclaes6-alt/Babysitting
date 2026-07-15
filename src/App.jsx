@@ -25,7 +25,9 @@ export default function App() {
   const [loading,setLoading]=useState(true);
   const [tab,setTab]=useState("dashboard");
   const [showHistory,setShowHistory]=useState(false);
-  const [editingSession,setEditingSession]=useState(null);
+  const [activities,setActivities]=useState([]);
+  const [newActivity,setNewActivity]=useState({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
+  const [editingActivity,setEditingActivity]=useState(null);
   const [editingAirport,setEditingAirport]=useState(null);
   const [editingPayment,setEditingPayment]=useState(null);
   const [quickLog,setQuickLog]=useState(null);
@@ -39,10 +41,11 @@ export default function App() {
   useEffect(()=>{
     async function load(){
       try{
-        const[s,a,p]=await Promise.all([loadCol("sessions"),loadCol("airports"),loadCol("payments")]);
+        const[s,a,p,act]=await Promise.all([loadCol("sessions"),loadCol("airports"),loadCol("payments"),loadCol("activities")]);
         setSessions(s.sort((a,b)=>a.date.localeCompare(b.date)));
         setAirports(a.sort((a,b)=>a.date.localeCompare(b.date)));
         setPayments(p.sort((a,b)=>a.date.localeCompare(b.date)));
+        setActivities(act.sort((a,b)=>(a.dateFrom||"").localeCompare(b.dateFrom||"")));
         // load feedback
         const fb=await loadCol("feedback");
         if(fb.length>0){
@@ -55,7 +58,7 @@ export default function App() {
     load();
   },[]);
 
-  const totalEarned=sessions.reduce((s,x)=>s+x.earned,0)+airports.reduce((s,x)=>s+x.earned,0);
+  const totalEarned=sessions.reduce((s,x)=>s+x.earned,0)+airports.reduce((s,x)=>s+x.earned,0)+activities.filter(a=>!a.excludeFromOwed).reduce((s,x)=>s+(x.amount||0),0);
   const totalExpenses=sessions.reduce((s,x)=>s+(x.gas||0)+(x.parking||0)+(x.other||0),0)+airports.reduce((s,x)=>s+(x.gas||0)+(x.parking||0),0);
   const totalPaid=payments.reduce((s,x)=>s+x.amount,0);
   const balance=totalEarned+totalExpenses-totalPaid;
@@ -103,7 +106,19 @@ export default function App() {
 
   async function saveEdit(updated){const{id,...data}=updated;await updateItem("sessions",id,data);setSessions(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingSession(null);}
   async function saveAirportEdit(updated){const{id,...data}=updated;await updateItem("airports",id,data);setAirports(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingAirport(null);}
-  async function savePaymentEdit(updated){const{id,...data}=updated;await updateItem("payments",id,data);setPayments(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingPayment(null);}
+  async function addActivity(){
+    if(!newActivity.description||!newActivity.amount)return;
+    const data={description:newActivity.description,amount:+newActivity.amount,excludeFromOwed:!!newActivity.excludeFromOwed,dateFrom:newActivity.dateFrom||"",dateTo:newActivity.dateTo||""};
+    const item=await addItem("activities",data);
+    setActivities(prev=>[...prev,item].sort((a,b)=>(a.dateFrom||"").localeCompare(b.dateFrom||"")));
+    setNewActivity({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
+  }
+  async function saveActivityEdit(updated){
+    const{id,...data}=updated;
+    await updateItem("activities",id,data);
+    setActivities(prev=>prev.map(x=>x.id===id?updated:x));
+    setEditingActivity(null);
+  }const{id,...data}=updated;await updateItem("payments",id,data);setPayments(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingPayment(null);}
 
   async function addAirport(){
     const info=AIRPORTS[newAirport.airport]||AIRPORTS.Brussels;
@@ -122,18 +137,19 @@ export default function App() {
   }
 
   async function deleteItem(type,id){
-    const col=type==="session"?"sessions":type==="airport"?"airports":"payments";
+    const col=type==="session"?"sessions":type==="airport"?"airports":type==="payment"?"payments":"activities";
     await deleteItem_db(col,id);
     if(type==="session")setSessions(p=>p.filter(x=>x.id!==id));
     if(type==="airport")setAirports(p=>p.filter(x=>x.id!==id));
     if(type==="payment")setPayments(p=>p.filter(x=>x.id!==id));
+    if(type==="activity")setActivities(p=>p.filter(x=>x.id!==id));
   }
 
   const recentSessions=[...sessions].reverse().slice(0,10);
   const recentAirports=[...airports].reverse().slice(0,10);
   const allPayments=[...payments].reverse();
-  const tabs=[["dashboard","🏠"],["hours","⏰"],["airport","✈️"],["payment","💰"],["analytics","📊"]];
-  const tabLabels={dashboard:"Home",hours:"Hours",airport:"Airport",payment:"Payment",analytics:"Analytics"};
+  const tabs=[["dashboard","🏠"],["hours","⏰"],["airport","✈️"],["payment","💰"],["activity","🎪"],["analytics","📊"]];
+  const tabLabels={dashboard:"Home",hours:"Hours",airport:"Airport",payment:"Payment",activity:"Activity",analytics:"Analytics"};
 
   if(loading)return(
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf5f8",flexDirection:"column",gap:16}}>
@@ -166,7 +182,8 @@ export default function App() {
         {tab==="hours"&&<LogHours newSession={newSession} setNewSession={setNewSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession} clockedIn={clockedIn} clockIn={clockIn} clockOut={clockOut}/>}
         {tab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={airports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
         {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
-        {tab==="analytics"&&<Analytics sessions={sessions} airports={airports} payments={payments} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid}/>}
+        {tab==="activity"&&<LogActivity newActivity={newActivity} setNewActivity={setNewActivity} addActivity={addActivity} activities={activities} deleteItem={deleteItem} setEditingActivity={setEditingActivity}/>}
+        {tab==="analytics"&&<Analytics sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid}/>}
       </main>
 
       {/* bottom nav */}
@@ -183,7 +200,7 @@ export default function App() {
 
       {editingSession&&<EditModal session={editingSession} onSave={saveEdit} onClose={()=>setEditingSession(null)}/>}
       {editingAirport&&<EditAirportModal airport={editingAirport} onSave={saveAirportEdit} onClose={()=>setEditingAirport(null)}/>}
-      {editingPayment&&<EditPaymentModal payment={editingPayment} onSave={savePaymentEdit} onClose={()=>setEditingPayment(null)}/>}
+      {editingActivity&&<EditActivityModal activity={editingActivity} onSave={saveActivityEdit} onClose={()=>setEditingActivity(null)}/>}
       {showFeedback&&<FeedbackModal notes={feedbackNotes} onSave={saveFeedback} onClose={()=>setShowFeedback(false)}/>}
     </div>
   );
@@ -606,6 +623,93 @@ function Sect({title,children}){return<div style={{marginBottom:20}}><h3 style={
 function Field({label,children}){return<label style={S.label}><span style={{marginBottom:4,display:"block"}}>{label}</span>{children}</label>;}
 function FunFact({icon,label,value,sub}){return(<div style={{background:"#fff7fa",borderRadius:12,padding:"10px 12px",border:"1px solid #fce7f0",textAlign:"center"}}><div style={{fontSize:18,marginBottom:3}}>{icon}</div><div style={{fontSize:9,color:"#c97a94",fontWeight:600,textTransform:"uppercase",letterSpacing:.5}}>{label}</div><div style={{fontSize:11,fontWeight:800,color:"#b5476a",marginTop:2,lineHeight:1.3}}>{value}</div>{sub&&<div style={{fontSize:10,color:C.green,fontWeight:700,marginTop:1}}>{sub}</div>}</div>);}
 function AnalCard({label,value,accent,note}){return(<div style={{background:"white",borderRadius:12,padding:"12px 14px",border:`1.5px solid ${accent}33`,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:3,background:accent}}/><div style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>{label}</div><div style={{fontSize:18,fontWeight:800,color:accent}}>{value}</div><div style={{fontSize:10,color:"#bbb",marginTop:1}}>{note}</div></div>);}
+
+function LogActivity({newActivity,setNewActivity,addActivity,activities,deleteItem,setEditingActivity}){
+  const allDesc=[...activities].reverse();
+  return(
+    <div>
+      <div style={S.card}>
+        <div style={{marginBottom:16}}><h2 style={S.cardTitle}>Log Activity 🎪</h2></div>
+        <div style={S.formGrid}>
+          <Field label="📝 Description">
+            <input style={S.input} type="text" placeholder="e.g. Zomerkamp 2026" value={newActivity.description} onChange={e=>setNewActivity(p=>({...p,description:e.target.value}))}/>
+          </Field>
+          <Field label="💶 Amount earned (€)">
+            <input style={S.input} type="number" min="0" step="0.01" placeholder="0.00" value={newActivity.amount} onChange={e=>setNewActivity(p=>({...p,amount:e.target.value}))}/>
+          </Field>
+          <Field label="📅 From date (optional)">
+            <input style={S.input} type="date" value={newActivity.dateFrom} onChange={e=>setNewActivity(p=>({...p,dateFrom:e.target.value}))}/>
+          </Field>
+          <Field label="📅 To date (optional)">
+            <input style={S.input} type="date" value={newActivity.dateTo} onChange={e=>setNewActivity(p=>({...p,dateTo:e.target.value}))}/>
+          </Field>
+        </div>
+        <label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:newActivity.excludeFromOwed?"#fff8f0":"#fdf5f8",borderRadius:10,border:`1.5px solid ${newActivity.excludeFromOwed?"#ffe0b0":"#fce7f0"}`}}>
+          <input type="checkbox" checked={!!newActivity.excludeFromOwed} onChange={e=>setNewActivity(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#b87a30"}}/>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:newActivity.excludeFromOwed?"#b87a30":"#3a2a35"}}>Not paid by regular boss</div>
+            <div style={{fontSize:11,color:"#c9a0b0"}}>Excludes this from the "Still Owed" balance</div>
+          </div>
+        </label>
+        <button style={{...S.primaryBtn,opacity:(newActivity.description&&newActivity.amount)?1:0.5}} onClick={addActivity} disabled={!newActivity.description||!newActivity.amount}>
+          Add Activity 🐾
+        </button>
+      </div>
+      <Sect title={`Activities (${activities.length})`}>
+        {allDesc.length===0&&<p style={S.empty}>No activities yet 🎪</p>}
+        <div style={S.list}>
+          {allDesc.map(a=>(
+            <div key={a.id} style={{...S.listItem,border:`1px solid ${a.excludeFromOwed?"#ffe0b0":"#fce7f0"}`,background:a.excludeFromOwed?"#fff8f0":"#fdf5f8"}}>
+              <div style={S.listLeft}>
+                <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                  <span style={S.listDate}>{a.description}</span>
+                  {a.excludeFromOwed&&<span style={{fontSize:10,background:"#ffe0b0",color:"#b87a30",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Not in balance</span>}
+                </div>
+                {(a.dateFrom||a.dateTo)&&<span style={S.listSub}>{a.dateFrom?fmtDate(new Date(a.dateFrom)):""}{a.dateTo&&a.dateFrom?" → ":""}{a.dateTo?fmtDate(new Date(a.dateTo)):""}</span>}
+              </div>
+              <div style={S.listRight}>
+                <span style={{...S.listAmt,color:a.excludeFromOwed?"#b87a30":C.green}}>{fmtEuro(a.amount)}</span>
+                <button style={S.editBtn} onClick={()=>setEditingActivity(a)}>✏️</button>
+                <button style={S.deleteBtn} onClick={()=>deleteItem("activity",a.id)}>✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Sect>
+    </div>
+  );
+}
+
+function EditActivityModal({activity,onSave,onClose}){
+  const[form,setForm]=useState({...activity});
+  return(
+    <div style={S.overlay}>
+      <div style={S.modal}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3>
+          <button style={S.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <div style={S.formGrid}>
+          <Field label="📝 Description"><input style={S.input} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field>
+          <Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field>
+          <Field label="📅 From date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field>
+          <Field label="📅 To date"><input style={S.input} type="date" value={form.dateTo||""} onChange={e=>setForm(p=>({...p,dateTo:e.target.value}))}/></Field>
+        </div>
+        <label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#fff8f0":"#fdf5f8",borderRadius:10,border:`1.5px solid ${form.excludeFromOwed?"#ffe0b0":"#fce7f0"}`}}>
+          <input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#b87a30"}}/>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#b87a30":"#3a2a35"}}>Not paid by regular boss</div>
+            <div style={{fontSize:11,color:"#c9a0b0"}}>Excludes from "Still Owed" balance</div>
+          </div>
+        </label>
+        <div style={{display:"flex",gap:8}}>
+          <button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button>
+          <button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const C={pink:"#e8527a",blue:"#5b9bd5",green:"#5db887"};
 const S={
