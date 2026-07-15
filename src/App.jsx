@@ -186,7 +186,7 @@ export default function App() {
       {clockedIn&&<ClockBanner clockedIn={clockedIn} clockOut={clockOut} onReset={()=>{setClockedIn(null);localStorage.removeItem("yarden_clockin");}}/>}
 
       <main style={S.main}>
-        {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment}/>}
+        {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment}/>}
         {tab==="hours"&&<LogHours newSession={newSession} setNewSession={setNewSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession} clockedIn={clockedIn} clockIn={clockIn} clockOut={clockOut}/>}
         {tab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={airports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
         {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
@@ -234,7 +234,7 @@ function ClockBanner({clockedIn,clockOut,onReset}){
   );
 }
 
-function Dashboard({sessions,airports,payments,totalEarned,totalExpenses,totalPaid,balance,recentSessions,recentAirports,allPayments,showHistory,setShowHistory,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
+function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpenses,totalPaid,balance,recentSessions,recentAirports,allPayments,showHistory,setShowHistory,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
   // monthly calculations
   const now = new Date();
   const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
@@ -475,7 +475,7 @@ function LogPayment({newPayment,setNewPayment,addPayment,allPayments,deleteItem,
   );
 }
 
-function Analytics({sessions,airports,payments,totalEarned,totalExpenses,totalPaid}){
+function Analytics({sessions,airports,payments,activities,totalEarned,totalExpenses,totalPaid}){
   const[monthView,setMonthView]=useState("earned");
   const now=new Date();
   const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
