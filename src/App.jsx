@@ -27,6 +27,7 @@ export default function App() {
   const [showHistory,setShowHistory]=useState(false);
   const [activities,setActivities]=useState([]);
   const [newActivity,setNewActivity]=useState({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
+  const [editingSession,setEditingSession]=useState(null);
   const [editingActivity,setEditingActivity]=useState(null);
   const [editingAirport,setEditingAirport]=useState(null);
   const [editingPayment,setEditingPayment]=useState(null);
