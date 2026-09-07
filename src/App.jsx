@@ -160,7 +160,7 @@ export default function App() {
       </header>
 
       <main style={S.main}>
-        {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment}/>}
+        {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment} setEditingActivity={setEditingActivity}/>}
         {tab==="hours"&&<LogHours newSession={newSession} setNewSession={setNewSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/>}
         {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
         {tab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={airports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
@@ -196,9 +196,8 @@ export default function App() {
 
 // ── Quick log modals ──────────────────────────────────────────────────────────
 function QuickLogHours({newSession,setNewSession,addSession,onClose}){
-  const[sh,sm]=newSession.startTime.split(":").map(Number);
-  const[eh,em]=(newSession.endTime||"00:00").split(":").map(Number);
-  const hrs=Math.max(0,((eh*60+em)-(sh*60+sm))/60);
+  function calcHrs(s,e){if(!s||!e)return 0;const[sh,sm]=s.split(":").map(Number);const[eh,em]=e.split(":").map(Number);return Math.max(0,((eh*60+em)-(sh*60+sm))/60);}
+  const hrs=calcHrs(newSession.startTime,newSession.endTime);
   const rate=rateForDate(newSession.date);
   return(
     <div style={S.overlay} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
@@ -240,7 +239,7 @@ function QuickLogPayment({newPayment,setNewPayment,addPayment,onClose}){
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpenses,totalPaid,balance,recentSessions,recentAirports,allPayments,showHistory,setShowHistory,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
+function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpenses,totalPaid,balance,recentSessions,recentAirports,allPayments,showHistory,setShowHistory,deleteItem,setEditingSession,setEditingAirport,setEditingPayment,setEditingActivity}){
   const now=new Date();
   const thisMonthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
   const lastMonthDate=new Date(now.getFullYear(),now.getMonth()-1,1);
@@ -274,7 +273,7 @@ function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpen
         <MonthCard label="Avg 3 months" value={fmtEuro(avg3)} sub={`avg ${avgHours3.toFixed(1)}h/month`} accent={C.green}/>
       </div>
       <Sect title="📋 Recent Activity">
-        <RecentActivity sessions={recentSessions} airports={recentAirports} payments={allPayments.slice(0,5)} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment}/>
+        <RecentActivity sessions={recentSessions} airports={recentAirports} payments={allPayments.slice(0,5)} activities={activities} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment} setEditingActivity={setEditingActivity}/>
       </Sect>
     </div>
   );
@@ -305,11 +304,12 @@ function WeekDivider({label}){
   );
 }
 
-function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession,setEditingAirport,setEditingPayment}){
+function RecentActivity({sessions,airports,payments,activities,deleteItem,setEditingSession,setEditingAirport,setEditingPayment,setEditingActivity}){
   const items=[
-    ...sessions.map(s=>({...s,_type:"session",_sortDate:s.date+s.startTime})),
+    ...sessions.map(s=>({...s,_type:"session",_sortDate:s.date+(s.startTime||"")})),
     ...airports.map(a=>({...a,_type:"airport",_sortDate:a.date+"00:00"})),
     ...payments.map(p=>({...p,_type:"payment",_sortDate:p.date+"00:00"})),
+    ...(activities||[]).map(a=>({...a,_type:"activity",_sortDate:(a.dateFrom||a.date||"")+"00:00"})),
   ].sort((a,b)=>b._sortDate.localeCompare(a._sortDate)).slice(0,15);
   if(!items.length)return<p style={S.empty}>No activity yet 🐾</p>;
   let lastWeek=null;
@@ -342,7 +342,7 @@ function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession
               <div style={S.listRight}><span style={{...S.listAmt,color:C.blue}}>{fmtEuro(item.earned)}</span><button style={S.editBtn} onClick={()=>setEditingAirport(item)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("airport",item.id)}>✕</button></div>
             </div>
           );
-        } else {
+        } else if(item._type==="payment") {
           card=(
             <div key={item.id+"p"} style={{...S.listItem,background:"#f5f2ff",borderLeft:"3px solid #c4b0f5"}}>
               <div style={{...S.listLeft,gap:1}}>
@@ -350,6 +350,21 @@ function RecentActivity({sessions,airports,payments,deleteItem,setEditingSession
                 <span style={{...S.listSub,color:"#9b80e0"}}>Received from boss</span>
               </div>
               <div style={S.listRight}><span style={{...S.listAmt,color:"#6b48d4"}}>{fmtEuro(item.amount)}</span><button style={S.editBtn} onClick={()=>setEditingPayment(item)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("payment",item.id)}>✕</button></div>
+            </div>
+          );
+        } else {
+          // activity
+          card=(
+            <div key={item.id+"act"} style={{...S.listItem,background:item.excludeFromOwed?"#fff8f0":"#f5f2ff",borderLeft:`3px solid ${item.excludeFromOwed?"#f0a830":"#a78bfa"}`}}>
+              <div style={{...S.listLeft,gap:1}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                  <span style={{fontSize:10,background:"#f0ecff",color:"#6b48d4",borderRadius:6,padding:"1px 7px",fontWeight:700,letterSpacing:.3}}>🎪 Activity</span>
+                  <span style={S.listDate}>{item.description}</span>
+                  {item.excludeFromOwed&&<span style={{fontSize:10,background:"#ffe0b0",color:"#b87a30",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Not in balance</span>}
+                </div>
+                {(item.dateFrom||item.dateTo)&&<span style={S.listSub}>{item.dateFrom?fmtDate(new Date(item.dateFrom)):""}{item.dateTo&&item.dateFrom?" → ":""}{item.dateTo?fmtDate(new Date(item.dateTo)):""}</span>}
+              </div>
+              <div style={S.listRight}><span style={{...S.listAmt,color:item.excludeFromOwed?"#b87a30":"#a78bfa"}}>{fmtEuro(item.amount)}</span><button style={S.editBtn} onClick={()=>setEditingActivity(item)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("activity",item.id)}>✕</button></div>
             </div>
           );
         }
