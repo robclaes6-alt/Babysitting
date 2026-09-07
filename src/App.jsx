@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebase.js";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 
 const AIRPORTS = { Brussels:{km:95,earned:90.58}, Charleroi:{km:226,earned:145.18}, Eindhoven:{km:170,earned:140} };
 const FUEL_PER_KM = 0.111408;
@@ -33,7 +33,9 @@ export default function App() {
   const [quickLog,setQuickLog]=useState(null);
   const [showFeedback,setShowFeedback]=useState(false);
   const [feedbackNotes,setFeedbackNotes]=useState([]);
-  const [newSession,setNewSession]=useState({date:today(),startTime:"16:30",endTime:"20:00",parking:0,other:0});
+  const [toast,setToast]=useState(null);
+  function showToast(msg,color="#5db887"){setToast({msg,color});setTimeout(()=>setToast(null),2500);}
+
   const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:0});
   const [newPayment,setNewPayment]=useState({date:today(),amount:""});
   const [newActivity,setNewActivity]=useState({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
@@ -41,12 +43,11 @@ export default function App() {
   useEffect(()=>{
     async function load(){
       try{
-        const[s,a,p,act,fb]=await Promise.all([loadCol("sessions"),loadCol("airports"),loadCol("payments"),loadCol("activities"),loadCol("feedback")]);
+        const[s,a,p,act]=await Promise.all([loadCol("sessions"),loadCol("airports"),loadCol("payments"),loadCol("activities")]);
         setSessions(s.sort((a,b)=>a.date.localeCompare(b.date)));
         setAirports(a.sort((a,b)=>a.date.localeCompare(b.date)));
         setPayments(p.sort((a,b)=>a.date.localeCompare(b.date)));
         setActivities(act.sort((a,b)=>(a.dateFrom||"").localeCompare(b.dateFrom||"")));
-        if(fb.length>0) setFeedbackNotes(fb[0].notes||[]);
       }catch(e){console.error(e);}
       setLoading(false);
     }
@@ -61,8 +62,6 @@ export default function App() {
   const balanceEarned=sessions.reduce((s,x)=>s+x.earned,0)+airports.reduce((s,x)=>s+x.earned,0)+activities.filter(a=>!a.excludeFromOwed).reduce((s,x)=>s+(x.amount||0),0);
   const balance=balanceEarned+totalExpenses-totalPaid;
 
-  async function saveFeedback(notes){setFeedbackNotes(notes);try{await setDoc(doc(db,"feedback","main"),{notes});}catch(e){console.error(e);}}
-
   async function addSession(){
     const[sh,sm]=newSession.startTime.split(":").map(Number);
     const[eh,em]=newSession.endTime.split(":").map(Number);
@@ -72,7 +71,8 @@ export default function App() {
     const data={date:newSession.date,startTime:newSession.startTime,endTime:newSession.endTime,hours:+hrs.toFixed(4),km:0,gas:0,parking:+newSession.parking,other:+newSession.other,earned:+(hrs*rate).toFixed(4),rate};
     const item=await addItem("sessions",data);
     setSessions(prev=>[...prev,item].sort((a,b)=>a.date.localeCompare(b.date)));
-    setNewSession(p=>({...p,date:today(),parking:0,other:0,endTime:"20:00"}));
+    setNewSession({date:today(),startTime:"",endTime:"",parking:0,other:0});
+    showToast("✅ Session added!");
   }
   async function saveEdit(updated){const{id,...data}=updated;await updateItem("sessions",id,data);setSessions(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingSession(null);}
 
@@ -82,6 +82,7 @@ export default function App() {
     const item=await addItem("airports",data);
     setAirports(prev=>[...prev,item].sort((a,b)=>a.date.localeCompare(b.date)));
     setNewAirport(p=>({...p,date:today(),parking:0}));
+    showToast("✅ Airport trip added!");
   }
   async function saveAirportEdit(updated){const{id,...data}=updated;await updateItem("airports",id,data);setAirports(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingAirport(null);}
 
@@ -91,6 +92,7 @@ export default function App() {
     const item=await addItem("payments",data);
     setPayments(prev=>[...prev,item].sort((a,b)=>a.date.localeCompare(b.date)));
     setNewPayment(p=>({...p,date:today(),amount:""}));
+    showToast("✅ Payment added!","#6b48d4");
   }
   async function savePaymentEdit(updated){
     const{id,...data}=updated;
@@ -105,6 +107,7 @@ export default function App() {
     const item=await addItem("activities",data);
     setActivities(prev=>[...prev,item].sort((a,b)=>(a.dateFrom||"").localeCompare(b.dateFrom||"")));
     setNewActivity({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
+    showToast("✅ Activity added!","#a78bfa");
   }
   async function saveActivityEdit(updated){
     const{id,...data}=updated;
@@ -150,9 +153,8 @@ export default function App() {
           </div>
           {/* Quick action buttons in header */}
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <button style={S.headerActionBtn} onClick={()=>setQuickLog("hours")} title="Log hours">⏰ Log uren</button>
-            <button style={{...S.headerActionBtn,background:"#f0ecff",color:"#6b48d4"}} onClick={()=>setQuickLog("payment")} title="Log payment">💰 Betaling</button>
-            <button style={S.feedbackBtn} onClick={()=>setShowFeedback(true)}>💬</button>
+            <button style={S.headerActionBtn} onClick={()=>setQuickLog("hours")} title="Log hours">⏰ Log Hours</button>
+            <button style={{...S.headerActionBtn,background:"#f0ecff",color:"#6b48d4"}} onClick={()=>setQuickLog("payment")} title="Log payment">💰 Payment</button>
           </div>
         </div>
       </header>
@@ -179,11 +181,15 @@ export default function App() {
       {quickLog==="hours"&&<QuickLogHours newSession={newSession} setNewSession={setNewSession} addSession={async()=>{await addSession();setQuickLog(null);}} onClose={()=>setQuickLog(null)}/>}
       {quickLog==="payment"&&<QuickLogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={async()=>{await addPayment();setQuickLog(null);}} onClose={()=>setQuickLog(null)}/>}
 
-      {editingSession&&<EditModal session={editingSession} onSave={saveEdit} onClose={()=>setEditingSession(null)}/>}
+      {toast&&(
+        <div style={{position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"white",padding:"10px 22px",borderRadius:20,fontWeight:700,fontSize:14,zIndex:2000,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",whiteSpace:"nowrap",animation:"fadein .2s ease"}}>
+          {toast.msg}
+        </div>
+      )}
+      <style>{`@keyframes fadein{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
       {editingAirport&&<EditAirportModal airport={editingAirport} onSave={saveAirportEdit} onClose={()=>setEditingAirport(null)}/>}
       {editingPayment&&<EditPaymentModal payment={editingPayment} onSave={savePaymentEdit} onClose={()=>setEditingPayment(null)}/>}
       {editingActivity&&<EditActivityModal activity={editingActivity} onSave={saveActivityEdit} onClose={()=>setEditingActivity(null)}/>}
-      {showFeedback&&<FeedbackModal notes={feedbackNotes} onSave={saveFeedback} onClose={()=>setShowFeedback(false)}/>}
     </div>
   );
 }
@@ -205,7 +211,6 @@ function QuickLogHours({newSession,setNewSession,addSession,onClose}){
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
-          <Field label="⏱ Hours"><div style={{...S.input,background:"#fce7f0",color:"#b5476a",fontWeight:700}}>{hrs>0?`${hrs.toFixed(2)} hrs`:"—"}</div></Field>
           <Field label="🅿️ Parking (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.parking} onChange={e=>setNewSession(p=>({...p,parking:e.target.value}))}/></Field>
           <Field label="📦 Other (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
         </div>
@@ -373,7 +378,6 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
-          <Field label="⏱ Hours"><div style={{...S.input,background:"#fce7f0",color:"#b5476a",fontWeight:700}}>{hrs>0?`${hrs.toFixed(2)} hrs`:"—"}</div></Field>
           <Field label="🅿️ Parking (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.parking} onChange={e=>setNewSession(p=>({...p,parking:e.target.value}))}/></Field>
           <Field label="📦 Other (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
         </div>
@@ -613,15 +617,6 @@ function EditActivityModal({activity,onSave,onClose}){
   return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📝 Description"><input style={S.input} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field><Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field><Field label="📅 From date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field><Field label="📅 To date"><input style={S.input} type="date" value={form.dateTo||""} onChange={e=>setForm(p=>({...p,dateTo:e.target.value}))}/></Field></div><label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#fff8f0":"#fdf5f8",borderRadius:10,border:`1.5px solid ${form.excludeFromOwed?"#ffe0b0":"#fce7f0"}`}}><input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#b87a30"}}/><div><div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#b87a30":"#3a2a35"}}>Not paid by regular boss</div><div style={{fontSize:11,color:"#c9a0b0"}}>Excludes from "Still Owed" balance</div></div></label><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
 }
 
-const STATUS_STYLES={open:{bg:"#fff7fa",color:"#b5476a",border:"#fce7f0",label:"Open"},done:{bg:"#f0fff4",color:"#3a8a6a",border:"#c6f0d8",label:"✅ Done"},wontdo:{bg:"#f5f5f5",color:"#888",border:"#ddd",label:"🚫 Won't do"},cancel:{bg:"#fff8f0",color:"#b87a30",border:"#ffe0b0",label:"❌ Cancelled"}};
-function FeedbackModal({notes,onSave,onClose}){
-  const[items,setItems]=useState(notes);const[newText,setNewText]=useState("");const[newAuthor,setNewAuthor]=useState("");
-  function addNote(){if(!newText.trim())return;setItems(prev=>[...prev,{id:Date.now(),text:newText.trim(),author:newAuthor.trim()||"Anonymous",status:"open",date:new Date().toISOString().split("T")[0]}]);setNewText("");setNewAuthor("");}
-  function setStatus(id,status){setItems(prev=>prev.map(x=>x.id===id?{...x,status}:x));}
-  function deleteNote(id){setItems(prev=>prev.filter(x=>x.id!==id));}
-  return(<div style={S.overlay}><div style={{...S.modal,width:"min(560px,95vw)",maxHeight:"85vh",display:"flex",flexDirection:"column"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>💬 Feedback & Ideas</h3><button style={S.closeBtn} onClick={()=>{onSave(items);onClose();}}>✕</button></div><div style={{background:"#fdf5f8",borderRadius:12,padding:12,marginBottom:14,border:"1px solid #fce7f0"}}><textarea style={{...S.input,minHeight:60,resize:"vertical",marginBottom:8}} placeholder="Describe your feedback..." value={newText} onChange={e=>setNewText(e.target.value)}/><div style={{display:"flex",gap:8}}><input style={{...S.input,flex:1}} placeholder="Your name (optional)" value={newAuthor} onChange={e=>setNewAuthor(e.target.value)}/><button style={{...S.primaryBtn,width:"auto",padding:"9px 16px",fontSize:13}} onClick={addNote}>Add</button></div></div><div style={{overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:8}}>{items.length===0&&<p style={S.empty}>No feedback yet 🐾</p>}{[...items].reverse().map(item=>{const st=STATUS_STYLES[item.status]||STATUS_STYLES.open;return(<div key={item.id} style={{background:st.bg,borderRadius:10,padding:"10px 12px",border:`1px solid ${st.border}`}}><div style={{display:"flex",justifyContent:"space-between",gap:8}}><div style={{flex:1}}><p style={{margin:"0 0 4px",fontSize:13,color:"#3a2a35"}}>{item.text}</p><span style={{fontSize:10,color:"#c9a0b0"}}>{item.author} · {item.date}</span></div><button style={S.deleteBtn} onClick={()=>deleteNote(item.id)}>✕</button></div><div style={{display:"flex",gap:4,marginTop:8,flexWrap:"wrap"}}>{Object.entries(STATUS_STYLES).map(([key,val])=>(<button key={key} onClick={()=>setStatus(item.id,key)} style={{padding:"2px 8px",borderRadius:6,border:`1px solid ${val.border}`,background:item.status===key?val.bg:"white",color:item.status===key?val.color:"#aaa",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{val.label}</button>))}</div></div>);})}</div><button style={{...S.primaryBtn,marginTop:14}} onClick={()=>{onSave(items);onClose();}}>Save & Close 🐾</button></div></div>);
-}
-
 // ── Shared small components ───────────────────────────────────────────────────
 function Sect({title,children}){return<div style={{marginBottom:20}}><h3 style={S.sectTitle}>{title}</h3>{children}</div>;}
 function Field({label,children}){return<label style={S.label}><span style={{marginBottom:4,display:"block"}}>{label}</span>{children}</label>;}
@@ -634,7 +629,7 @@ const S={
   header:{background:"linear-gradient(135deg,#fff0f5,#ffe8f5)",borderBottom:"2px solid #fce7f0",padding:"10px 0",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 12px #f4a7bb22"},
   headerInner:{maxWidth:740,margin:"0 auto",padding:"0 12px",display:"flex",alignItems:"center",justifyContent:"space-between"},
   logo:{fontSize:18,fontWeight:800,color:"#b5476a",letterSpacing:.5},
-  headerActionBtn:{background:"#fce7f0",color:"#b5476a",border:"none",borderRadius:10,padding:"7px 12px",fontSize:13,fontWeight:700,cursor:"pointer"},
+  headerActionBtn:{background:"#fce7f0",color:"#b5476a",border:"none",borderRadius:10,padding:"9px 16px",fontSize:14,fontWeight:700,cursor:"pointer"},
   feedbackBtn:{background:"white",border:"1.5px solid #fce7f0",borderRadius:10,padding:"6px 10px",fontSize:16,cursor:"pointer"},
   main:{maxWidth:740,margin:"0 auto",padding:"14px 12px 0"},
   card:{background:"white",borderRadius:16,padding:16,marginBottom:16,border:"1.5px solid #fce7f0",boxShadow:"0 4px 20px #f4a7bb11"},
