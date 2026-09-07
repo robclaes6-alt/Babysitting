@@ -8,7 +8,7 @@ const RATE_CHANGE_DATE = new Date("2025-09-01");
 
 function fmtDate(d) { return new Date(d).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short",year:"numeric"}); }
 function fmtEuro(n) { return "€"+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
-function rateForDate(d) { return new Date(d)>=RATE_CHANGE_DATE?20:15; }
+function rateForDate(d) { return d && new Date(d)>=RATE_CHANGE_DATE?20:15; }
 function today() { return new Date().toISOString().split("T")[0]; }
 
 async function loadCol(name) { const s=await getDocs(collection(db,name)); return s.docs.map(d=>({id:d.id,...d.data()})); }
@@ -214,7 +214,7 @@ function QuickLogHours({newSession,setNewSession,addSession,onClose}){
           <Field label="🅿️ Parking (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.parking} onChange={e=>setNewSession(p=>({...p,parking:e.target.value}))}/></Field>
           <Field label="📦 Other (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
         </div>
-        <div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>
+        {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
         <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>Add Session 🐾</button>
       </div>
     </div>
@@ -381,7 +381,7 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
           <Field label="🅿️ Parking (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.parking} onChange={e=>setNewSession(p=>({...p,parking:e.target.value}))}/></Field>
           <Field label="📦 Other (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
         </div>
-        <div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>
+        {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
         <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>Add Session 🐾</button>
       </div>
       <Sect title={showAll?`All Sessions (${filtered.length})`:"Recent Sessions"}>
