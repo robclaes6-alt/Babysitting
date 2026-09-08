@@ -676,7 +676,7 @@ const S={
   header:{background:"#1a1a24",borderBottom:"1px solid #2a2a3a",padding:"10px 0",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 20px rgba(0,0,0,0.4)"},
   headerInner:{maxWidth:740,margin:"0 auto",padding:"0 12px",display:"flex",alignItems:"center",justifyContent:"space-between"},
   logo:{fontSize:18,fontWeight:800,color:"#f472a0",letterSpacing:.5},
-  headerActionBtn:{background:"#1a1a2e",color:"#60a5fa",border:"1px solid #2a2a4a",borderRadius:10,padding:"9px 16px",fontSize:14,fontWeight:700,cursor:"pointer"},
+  headerActionBtn:{background:"#1a1a2e",color:"#60a5fa",border:"1px solid #2a2a4a",borderRadius:8,padding:"6px 11px",fontSize:12,fontWeight:700,cursor:"pointer"},
   main:{maxWidth:740,margin:"0 auto",padding:"14px 12px 0"},
   card:{background:"#1a1a24",borderRadius:16,padding:16,marginBottom:16,border:"1px solid #2a2a3a",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"},
   cardTitle:{margin:0,fontSize:16,fontWeight:800,color:"#f472a0"},
