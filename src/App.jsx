@@ -439,13 +439,13 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
-          <label style={S.label}>
+          <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-              <span>🕐 Start</span>
-              {newSession.startTime&&<button onClick={()=>{setNewSession(p=>({...p,startTime:""}));localStorage.removeItem("yarden_session_draft");}} style={{background:"#3a3a4a",border:"none",color:"#f0edf5",borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:12}}>✕ Clear</button>}
+              <span style={{...S.label,display:"block"}}>🕐 Start</span>
+              {newSession.startTime&&<button onTouchEnd={e=>{e.preventDefault();e.stopPropagation();setNewSession(p=>({...p,startTime:""}));localStorage.removeItem("yarden_session_draft");}} onClick={e=>{e.preventDefault();e.stopPropagation();setNewSession(p=>({...p,startTime:""}));localStorage.removeItem("yarden_session_draft");}} style={{background:"#3a3a4a",border:"none",color:"#f0edf5",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,zIndex:10,position:"relative"}}>✕ Clear</button>}
             </div>
             <input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/>
-          </label>
+          </div>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
