@@ -24,7 +24,7 @@ export default function App() {
   const [payments,setPayments]=useState([]);
   const [activities,setActivities]=useState([]);
   const [loading,setLoading]=useState(true);
-  const [tab,setTab]=useState("dashboard");
+  const [tab,setTab]=useState("hours");
   const [showHistory,setShowHistory]=useState(false);
   const [editingSession,setEditingSession]=useState(null);
   const [editingAirport,setEditingAirport]=useState(null);
@@ -129,9 +129,9 @@ export default function App() {
   const recentAirports=[...airports].reverse().slice(0,10);
   const allPayments=[...payments].reverse();
 
-  // Tabs: Home, Hours, Payment, Airport, Activity, Analytics
-  const tabs=[["dashboard","🏠"],["hours","⏰"],["payment","💰"],["airport","✈️"],["activity","🎪"],["analytics","📊"]];
-  const tabLabels={dashboard:"Home",hours:"Hours",payment:"Payment",airport:"Airport",activity:"Activity",analytics:"Analytics"};
+  // Tabs: Hours first, then Summary, Payment, Airport, Activity, Analytics
+  const tabs=[["hours","⏰"],["dashboard","📋"],["payment","💰"],["airport","✈️"],["activity","🎪"],["analytics","📊"]];
+  const tabLabels={hours:"Hours",dashboard:"Summary",payment:"Payment",airport:"Airport",activity:"Activity",analytics:"Analytics"};
 
   if(loading)return(
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf5f8",flexDirection:"column",gap:16}}>
@@ -258,19 +258,25 @@ function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpen
   const earnedThis=monthNet(thisMonthKey),hoursThis=monthHours(thisMonthKey);
   const earnedLast=monthNet(lastMonthKey),hoursLast=monthHours(lastMonthKey);
   const avgHours3=last3.length?last3.reduce((s,k)=>s+monthHours(k),0)/last3.length:0;
+  const lastPayment=allPayments.length>0?allPayments[0]:null;
   return(
     <div>
-      <div style={{background:"white",borderRadius:14,padding:"12px 16px",marginBottom:14,border:`2px solid ${balance<0?"#ffe0b0":"#fce7f0"}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div>
-          <span style={{fontSize:12,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>{balance<0?"Overpaid":"Still owed"}</span>
-          {balance<0&&<div style={{fontSize:11,color:"#b87a30",marginTop:2}}>Boss paid €{Math.abs(balance).toFixed(2)} too much</div>}
+      {/* Still owed + last payment */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+        <div style={{background:"white",borderRadius:14,padding:"12px 14px",border:`2px solid ${balance<0?"#ffe0b0":"#fce7f0"}`}}>
+          <span style={{fontSize:11,color:"#c9a0b0",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>{balance<0?"Overpaid":"Still owed"}</span>
+          {balance<0&&<div style={{fontSize:10,color:"#b87a30",marginBottom:2}}>Too much paid</div>}
+          <span style={{fontSize:22,fontWeight:800,color:balance<0?"#b87a30":balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
         </div>
-        <span style={{fontSize:24,fontWeight:800,color:balance<0?"#b87a30":balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-        <MonthCard label="This month" value={fmtEuro(earnedThis)} sub={`${hoursThis.toFixed(1)}h worked`} accent={C.pink}/>
-        <MonthCard label="Last month" value={fmtEuro(earnedLast)} sub={`${hoursLast.toFixed(1)}h worked`} accent={C.blue}/>
-        <MonthCard label="Avg 3 months" value={fmtEuro(avg3)} sub={`avg ${avgHours3.toFixed(1)}h/month`} accent={C.green}/>
+        <div style={{background:"#f5f2ff",borderRadius:14,padding:"12px 14px",border:"2px solid #e0d8ff"}}>
+          <span style={{fontSize:11,color:"#9b80e0",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>Last payment</span>
+          {lastPayment?(
+            <>
+              <span style={{fontSize:22,fontWeight:800,color:"#6b48d4"}}>{fmtEuro(lastPayment.amount)}</span>
+              <div style={{fontSize:10,color:"#9b80e0",marginTop:2}}>{fmtDate(new Date(lastPayment.date))}</div>
+            </>
+          ):<span style={{fontSize:14,color:"#c9a0b0"}}>No payments yet</span>}
+        </div>
       </div>
       <Sect title="📋 Recent Activity">
         <RecentActivity sessions={recentSessions} airports={recentAirports} payments={allPayments.slice(0,5)} activities={activities} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment} setEditingActivity={setEditingActivity}/>
@@ -309,16 +315,18 @@ function RecentActivity({sessions,airports,payments,activities,deleteItem,setEdi
     ...sessions.map(s=>({...s,_type:"session",_sortDate:s.date+(s.startTime||"")})),
     ...airports.map(a=>({...a,_type:"airport",_sortDate:a.date+"00:00"})),
     ...payments.map(p=>({...p,_type:"payment",_sortDate:p.date+"00:00"})),
-    ...(activities||[]).map(a=>({...a,_type:"activity",_sortDate:(a.dateFrom||a.date||"")+"00:00"})),
+    ...(activities||[]).map(a=>({...a,_type:"activity",_sortDate:(a.dateFrom||"2000-01-01")+"00:00",_date:a.dateFrom||""})),
   ].sort((a,b)=>b._sortDate.localeCompare(a._sortDate)).slice(0,15);
   if(!items.length)return<p style={S.empty}>No activity yet 🐾</p>;
   let lastWeek=null;
   return(
     <div style={S.list}>
       {items.map(item=>{
-        const ws=weekStart(item.date);
-        const showDivider=ws!==lastWeek;lastWeek=ws;
-        const weekLabel=new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+        const itemDate=item._date||item.date||"";
+        const ws=itemDate?weekStart(itemDate):"";
+        const showDivider=ws&&ws!==lastWeek;
+        if(ws)lastWeek=ws;
+        const weekLabel=ws?new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"";
         let card;
         if(item._type==="session"){
           const exp=[];if(item.parking>0)exp.push(`🅿️ €${item.parking.toFixed(2)}`);if(item.other>0)exp.push(`📦 €${item.other.toFixed(2)}`);
