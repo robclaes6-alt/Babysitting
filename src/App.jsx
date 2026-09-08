@@ -14,7 +14,7 @@ function fmtDate(d) {
   const year = date.getFullYear();
   return `${weekday} - ${day}/${month}/${year}`;
 }
-function fmtEuro(n) { return "€"+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+function fmtEuro(n) { return "€"+Number(n).toFixed(2); }
 function rateForDate(d) { return d && new Date(d)>=RATE_CHANGE_DATE?20:15; }
 function today() { return new Date().toISOString().split("T")[0]; }
 
@@ -193,7 +193,7 @@ export default function App() {
           {toast.msg}
         </div>
       )}
-      <style>{`@keyframes fadein{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
+      <style>{`@keyframes fadein{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}} * { box-sizing: border-box; } body, html { margin: 0; padding: 0; background: #0f0f13; }`}</style>
       {editingSession&&<EditModal session={editingSession} onSave={saveEdit} onClose={()=>setEditingSession(null)}/>}
       {editingAirport&&<EditAirportModal airport={editingAirport} onSave={saveAirportEdit} onClose={()=>setEditingAirport(null)}/>}
       {editingPayment&&<EditPaymentModal payment={editingPayment} onSave={savePaymentEdit} onClose={()=>setEditingPayment(null)}/>}
@@ -221,7 +221,7 @@ function QuickLogHours({newSession,setNewSession,addSession,onClose}){
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
-        <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>Add Session 🐾</button>
+        <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>+ Log</button>
       </div>
     </div>
   );
@@ -268,22 +268,28 @@ function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpen
   const lastPayment=allPayments.length>0?allPayments[0]:null;
   return(
     <div>
-      {/* Still owed + last payment */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-        <div style={{background:"#1a1a24",borderRadius:14,padding:"12px 14px",border:`2px solid ${balance<0?"#ffe0b0":"#2a2a3a"}`}}>
-          <span style={{fontSize:11,color:"#6b6b80",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>{balance<0?"Overpaid":"Still owed"}</span>
-          {balance<0&&<div style={{fontSize:10,color:"#f0a830",marginBottom:2}}>Too much paid</div>}
-          <span style={{fontSize:22,fontWeight:800,color:balance<0?"#f0a830":balance>50?"#e8527a":"#7ec8a0"}}>{fmtEuro(Math.abs(balance))}</span>
+      {/* Still owed + last payment - side by side */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+        <div style={{background:"#1a1a24",borderRadius:14,padding:"12px 14px",border:`1px solid ${balance<0?"#3a2a10":"#2a2a3a"}`}}>
+          <span style={{fontSize:10,color:"#6b6b80",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>{balance<0?"Overpaid":"Still owed"}</span>
+          {balance<0&&<div style={{fontSize:9,color:"#f0a830",marginBottom:2}}>Too much paid</div>}
+          <span style={{fontSize:20,fontWeight:800,color:balance<0?"#f0a830":balance>50?"#f472a0":"#34d399"}}>{fmtEuro(Math.abs(balance))}</span>
         </div>
         <div style={{background:"#1e1a2e",borderRadius:14,padding:"12px 14px",border:"1px solid #2a2a4a"}}>
-          <span style={{fontSize:11,color:"#a78bfa",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>Last payment</span>
+          <span style={{fontSize:10,color:"#a78bfa",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>Last payment</span>
           {lastPayment?(
             <>
-              <span style={{fontSize:22,fontWeight:800,color:"#a78bfa"}}>{fmtEuro(lastPayment.amount)}</span>
-              <div style={{fontSize:10,color:"#a78bfa",marginTop:2}}>{fmtDate(new Date(lastPayment.date))}</div>
+              <span style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{fmtEuro(lastPayment.amount)}</span>
+              <div style={{fontSize:9,color:"#6b6b80",marginTop:2}}>{fmtDate(new Date(lastPayment.date))}</div>
             </>
-          ):<span style={{fontSize:14,color:"#6b6b80"}}>No payments yet</span>}
+          ):<span style={{fontSize:13,color:"#6b6b80"}}>No payments yet</span>}
         </div>
+      </div>
+      {/* Month stats */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+        <MonthCard label="This month" value={fmtEuro(earnedThis)} sub={`${hoursThis.toFixed(1)}h`} accent={C.pink}/>
+        <MonthCard label="Last month" value={fmtEuro(earnedLast)} sub={`${hoursLast.toFixed(1)}h`} accent={C.blue}/>
+        <MonthCard label="Avg 3m" value={fmtEuro(avg3)} sub={`${avgHours3.toFixed(1)}h avg`} accent={C.green}/>
       </div>
       <Sect title="📋 Recent Activity">
         <RecentActivity sessions={recentSessions} airports={recentAirports} payments={allPayments.slice(0,5)} activities={activities} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment} setEditingActivity={setEditingActivity}/>
@@ -341,7 +347,7 @@ function RecentActivity({sessions,airports,payments,activities,deleteItem,setEdi
             <div key={item.id+"s"} style={{...S.listItem,borderLeft:"3px solid #f472a0"}}>
               <div style={{...S.listLeft,gap:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:10,background:"#2a2a3a",color:"#f472a0",borderRadius:6,padding:"1px 7px",fontWeight:700,letterSpacing:.3}}>⏰ Hours</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
-                <span style={S.listSub}>{item.startTime} – {item.endTime} · {item.hours.toFixed(2)}h</span>
+                <span style={{fontSize:14,fontWeight:600,color:"#d0ccdc"}}>{item.startTime} – {item.endTime}</span><span style={{fontSize:11,color:"#6b6b80"}}>{item.hours.toFixed(2)}h worked</span>
                 {exp.length>0&&<span style={{fontSize:10,color:"#6b6b80"}}>{exp.join("  ")}</span>}
               </div>
               <div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(item.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(item)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",item.id)}>✕</button></div>
@@ -411,7 +417,7 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
-        <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>Add Session 🐾</button>
+        <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>+ Log</button>
       </div>
       <Sect title={showAll?`All Sessions (${filtered.length})`:"Recent Sessions"}>
         <SessionList sessions={recentSessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/>
@@ -621,7 +627,7 @@ function SessionList({sessions,deleteItem,setEditingSession}){
     const ws=weekStart(s.date);const showDivider=ws!==lastWeek;lastWeek=ws;
     const weekLabel=new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
     const exp=[];if(s.other>0)exp.push(`💰 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);
-    return(<>{showDivider&&<WeekDivider key={"w"+ws} label={weekLabel}/>}<div key={s.id} style={{...S.listItem,borderLeft:"3px solid #f472a0"}}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={S.listSub}>{s.startTime} – {s.endTime} · {s.hours.toFixed(2)}h</span>{exp.length>0&&<span style={{fontSize:10,color:"#6b6b80",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div></>);
+    return(<>{showDivider&&<WeekDivider key={"w"+ws} label={weekLabel}/>}<div key={s.id} style={{...S.listItem,borderLeft:"3px solid #f472a0"}}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={{fontSize:14,fontWeight:600,color:"#d0ccdc"}}>{s.startTime} – {s.endTime}</span><span style={{fontSize:11,color:"#6b6b80"}}>{s.hours.toFixed(2)}h worked</span>{exp.length>0&&<span style={{fontSize:10,color:"#6b6b80",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div></>);
   })}</div>);
 }
 
@@ -666,7 +672,7 @@ function AnalCard({label,value,accent,note}){return(<div style={{background:"#1a
 
 const C={pink:"#f472a0",blue:"#60a5fa",green:"#34d399"};
 const S={
-  root:{minHeight:"100vh",background:"#0f0f13",color:"#f0edf5",fontFamily:"'DM Sans','Segoe UI',sans-serif",paddingBottom:80},
+  root:{minHeight:"100vh",background:"#0f0f13",color:"#f0edf5",fontFamily:"'DM Sans','Segoe UI',sans-serif",paddingBottom:80,margin:0},
   header:{background:"#1a1a24",borderBottom:"1px solid #2a2a3a",padding:"10px 0",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 20px rgba(0,0,0,0.4)"},
   headerInner:{maxWidth:740,margin:"0 auto",padding:"0 12px",display:"flex",alignItems:"center",justifyContent:"space-between"},
   logo:{fontSize:18,fontWeight:800,color:"#f472a0",letterSpacing:.5},
@@ -677,7 +683,7 @@ const S={
   sectTitle:{fontSize:12,fontWeight:700,color:"#6b6b80",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"},
   formGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14},
   label:{fontSize:11,color:"#6b6b80",fontWeight:700,letterSpacing:.3},
-  input:{background:"#12121a",border:"1px solid #2a2a3a",borderRadius:10,padding:"12px 12px",color:"#f0edf5",fontSize:16,outline:"none",width:"100%",boxSizing:"border-box",fontFamily:"inherit",WebkitAppearance:"none"},
+  input:{background:"#12121a",border:"1px solid #2a2a3a",borderRadius:10,padding:"14px 14px",color:"#f0edf5",fontSize:16,outline:"none",width:"100%",boxSizing:"border-box",fontFamily:"inherit",WebkitAppearance:"none",minHeight:"52px"},
   preview:{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#12121a",borderRadius:10,padding:"10px 14px",marginBottom:14,color:"#6b6b80",fontSize:13,border:"1px dashed #2a2a3a"},
   previewAmt:{fontSize:20,fontWeight:800,color:"#34d399"},
   primaryBtn:{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f472a0,#60a5fa)",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 3px 20px rgba(244,114,160,0.3)"},
