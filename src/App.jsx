@@ -47,7 +47,25 @@ export default function App() {
   const [toast,setToast]=useState(null);
   function showToast(msg,color="#5db887"){setToast({msg,color});setTimeout(()=>setToast(null),2500);}
 
-  const [newSession,setNewSession]=useState({date:today(),startTime:"",endTime:"",parking:0,other:0});
+  const [newSession,setNewSession]=useState(()=>{
+    try {
+      const saved = JSON.parse(localStorage.getItem("yarden_session_draft")||"null");
+      if(saved) return {...saved, endTime:"", other: saved.other||0};
+    } catch{}
+    return {date:today(),startTime:"",endTime:"",parking:0,other:0};
+  });
+  function updateSession(updater) {
+    setNewSession(prev => {
+      const next = updater(prev);
+      // Save startTime and date to localStorage as draft
+      if(next.startTime || next.date !== today()) {
+        localStorage.setItem("yarden_session_draft", JSON.stringify({
+          date: next.date, startTime: next.startTime, other: next.other
+        }));
+      }
+      return next;
+    });
+  }
   const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:0});
   const [newPayment,setNewPayment]=useState({date:today(),amount:""});
   const [newActivity,setNewActivity]=useState({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
@@ -84,6 +102,7 @@ export default function App() {
     const item=await addItem("sessions",data);
     setSessions(prev=>[...prev,item].sort((a,b)=>a.date.localeCompare(b.date)));
     setNewSession({date:today(),startTime:"",endTime:"",parking:0,other:0});
+    localStorage.removeItem("yarden_session_draft");
     showToast("✅ Session added!");
   }
   async function saveEdit(updated){const{id,...data}=updated;await updateItem("sessions",id,data);setSessions(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingSession(null);}
@@ -173,7 +192,7 @@ export default function App() {
 
       <main style={S.main}>
         {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment} setEditingActivity={setEditingActivity}/>}
-        {tab==="hours"&&<LogHours newSession={newSession} setNewSession={setNewSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/>}
+        {tab==="hours"&&<LogHours newSession={newSession} setNewSession={updateSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/>}
         {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
         {tab==="services"&&<LogServices newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={airports} deleteItem={deleteItem} setEditingAirport={setEditingAirport} newActivity={newActivity} setNewActivity={setNewActivity} addActivity={addActivity} activities={activities} setEditingActivity={setEditingActivity}/>}
         {tab==="analytics"&&<Analytics sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid}/>}
@@ -189,7 +208,7 @@ export default function App() {
       </nav>
 
       {/* Quick log modals */}
-      {quickLog==="hours"&&<QuickLogHours newSession={newSession} setNewSession={setNewSession} addSession={async()=>{await addSession();setQuickLog(null);}} onClose={()=>setQuickLog(null)}/>}
+      {quickLog==="hours"&&<QuickLogHours newSession={newSession} setNewSession={updateSession} addSession={async()=>{await addSession();setQuickLog(null);}} onClose={()=>setQuickLog(null)}/>}
       {quickLog==="payment"&&<QuickLogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={async()=>{await addPayment();setQuickLog(null);}} onClose={()=>setQuickLog(null)}/>}
 
       {toast&&(
@@ -413,7 +432,10 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
   return(
     <div>
       <div style={S.card}>
-        <div style={{marginBottom:16}}><h2 style={S.cardTitle}>Log Working Hours ⏰</h2></div>
+        <div style={{marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <h2 style={S.cardTitle}>Log Working Hours ⏰</h2>
+          {newSession.startTime&&<span style={{fontSize:11,color:"#34d399",fontWeight:600}}>⏱ Start saved</span>}
+        </div>
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
