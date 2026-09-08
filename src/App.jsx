@@ -12,7 +12,7 @@ function fmtDate(d) {
   const day = String(date.getDate()).padStart(2,"0");
   const month = String(date.getMonth()+1).padStart(2,"0");
   const year = date.getFullYear();
-  return `${weekday} - ${day}/${month}/${year}`;
+  return `${weekday}, ${day}/${month}/${year}`;
 }
 function fmtEuro(n) { return "€"+Number(n).toFixed(2); }
 function rateForDate(d) { return d && new Date(d)>=RATE_CHANGE_DATE?20:15; }
@@ -347,7 +347,7 @@ function RecentActivity({sessions,airports,payments,activities,deleteItem,setEdi
             <div key={item.id+"s"} style={{...S.listItem,borderLeft:"3px solid #f472a0"}}>
               <div style={{...S.listLeft,gap:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:10,background:"#2a2a3a",color:"#f472a0",borderRadius:6,padding:"1px 7px",fontWeight:700,letterSpacing:.3}}>⏰ Hours</span><span style={S.listDate}>{fmtDate(new Date(item.date))}</span></div>
-                <span style={{fontSize:14,fontWeight:600,color:"#d0ccdc"}}>{item.startTime} – {item.endTime}</span><span style={{fontSize:11,color:"#6b6b80"}}>{item.hours.toFixed(2)}h worked</span>
+                <span style={{fontSize:14,fontWeight:600,color:"#d0ccdc"}}>{item.startTime} – {item.endTime}</span>
                 {exp.length>0&&<span style={{fontSize:10,color:"#6b6b80"}}>{exp.join("  ")}</span>}
               </div>
               <div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(item.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(item)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",item.id)}>✕</button></div>
@@ -627,7 +627,7 @@ function SessionList({sessions,deleteItem,setEditingSession}){
     const ws=weekStart(s.date);const showDivider=ws!==lastWeek;lastWeek=ws;
     const weekLabel=new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
     const exp=[];if(s.other>0)exp.push(`💰 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);
-    return(<>{showDivider&&<WeekDivider key={"w"+ws} label={weekLabel}/>}<div key={s.id} style={{...S.listItem,borderLeft:"3px solid #f472a0"}}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={{fontSize:14,fontWeight:600,color:"#d0ccdc"}}>{s.startTime} – {s.endTime}</span><span style={{fontSize:11,color:"#6b6b80"}}>{s.hours.toFixed(2)}h worked</span>{exp.length>0&&<span style={{fontSize:10,color:"#6b6b80",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div></>);
+    return(<>{showDivider&&<WeekDivider key={"w"+ws} label={weekLabel}/>}<div key={s.id} style={{...S.listItem,borderLeft:"3px solid #f472a0"}}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={{fontSize:14,fontWeight:600,color:"#d0ccdc"}}>{s.startTime} – {s.endTime}</span>{exp.length>0&&<span style={{fontSize:10,color:"#6b6b80",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div></>);
   })}</div>);
 }
 
