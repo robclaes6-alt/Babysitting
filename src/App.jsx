@@ -431,7 +431,7 @@ function LogServices({newAirport,setNewAirport,addAirport,recentAirports,allAirp
   );
 }
 
-newAirport,setNewAirport,addAirport,recentAirports,allAirports,deleteItem,setEditingAirport}){
+function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,allAirports,deleteItem,setEditingAirport}){
   const info=AIRPORTS[newAirport.airport]||AIRPORTS.Brussels;
   const[showAll,setShowAll]=useState(false);
   const displayed=showAll?[...allAirports].reverse():recentAirports;
