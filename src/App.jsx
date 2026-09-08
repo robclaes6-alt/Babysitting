@@ -15,6 +15,10 @@ function fmtDate(d) {
   return `${weekday}, ${day}/${month}/${year}`;
 }
 function fmtEuro(n) { return "€"+Number(n).toFixed(2); }
+function fmtEuroRound(n) {
+  const rounded = Math.round(Number(n));
+  return "€"+rounded.toLocaleString("nl-BE"); // e.g. €1 196 or €34.526
+}
 function rateForDate(d) { return d && new Date(d)>=RATE_CHANGE_DATE?20:15; }
 function today() { return new Date().toISOString().split("T")[0]; }
 
@@ -216,7 +220,7 @@ function QuickLogHours({newSession,setNewSession,addSession,onClose}){
         </div>
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
-          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
         </div>
@@ -273,13 +277,13 @@ function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpen
         <div style={{background:"#1a1a24",borderRadius:14,padding:"12px 14px",border:`1px solid ${balance<0?"#3a2a10":"#2a2a3a"}`}}>
           <span style={{fontSize:10,color:"#6b6b80",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>{balance<0?"Overpaid":"Still owed"}</span>
           {balance<0&&<div style={{fontSize:9,color:"#f0a830",marginBottom:2}}>Too much paid</div>}
-          <span style={{fontSize:20,fontWeight:800,color:balance<0?"#f0a830":balance>50?"#f472a0":"#34d399"}}>{fmtEuro(Math.abs(balance))}</span>
+          <span style={{fontSize:20,fontWeight:800,color:balance<0?"#f0a830":balance>50?"#f472a0":"#34d399"}}>{fmtEuroRound(Math.abs(balance))}</span>
         </div>
         <div style={{background:"#1e1a2e",borderRadius:14,padding:"12px 14px",border:"1px solid #2a2a4a"}}>
           <span style={{fontSize:10,color:"#a78bfa",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>Last payment</span>
           {lastPayment?(
             <>
-              <span style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{fmtEuro(lastPayment.amount)}</span>
+              <span style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{fmtEuroRound(lastPayment.amount)}</span>
               <div style={{fontSize:9,color:"#6b6b80",marginTop:2}}>{fmtDate(new Date(lastPayment.date))}</div>
             </>
           ):<span style={{fontSize:13,color:"#6b6b80"}}>No payments yet</span>}
@@ -287,9 +291,9 @@ function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpen
       </div>
       {/* Month stats */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-        <MonthCard label="This month" value={fmtEuro(earnedThis)} sub={`${hoursThis.toFixed(1)}h`} accent={C.pink}/>
-        <MonthCard label="Last month" value={fmtEuro(earnedLast)} sub={`${hoursLast.toFixed(1)}h`} accent={C.blue}/>
-        <MonthCard label="Avg 3m" value={fmtEuro(avg3)} sub={`${avgHours3.toFixed(1)}h avg`} accent={C.green}/>
+        <MonthCard label="This month" value={fmtEuroRound(earnedThis)} sub={`${hoursThis.toFixed(1)}h`} accent={C.pink}/>
+        <MonthCard label="Last month" value={fmtEuroRound(earnedLast)} sub={`${hoursLast.toFixed(1)}h`} accent={C.blue}/>
+        <MonthCard label="Avg 3m" value={fmtEuroRound(avg3)} sub={`${avgHours3.toFixed(1)}h avg`} accent={C.green}/>
       </div>
       <Sect title="📋 Recent Activity">
         <RecentActivity sessions={recentSessions} airports={recentAirports} payments={allPayments.slice(0,5)} activities={activities} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment} setEditingActivity={setEditingActivity}/>
@@ -412,7 +416,7 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
         <div style={{marginBottom:16}}><h2 style={S.cardTitle}>Log Working Hours ⏰</h2></div>
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
-          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
         </div>
@@ -573,17 +577,17 @@ function Analytics({sessions,airports,payments,activities,totalEarned,totalExpen
         <h2 style={{...S.cardTitle,color:"#f472a0",marginBottom:4}}>Earnings Stats 📊</h2>
         <p style={{color:"#a06080",fontSize:13,margin:"0 0 16px"}}>All the numbers! 🐾</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-          <MonthCard label="Total Earned" value={fmtEuro(totalEarned)} sub="all time" accent={C.green}/>
-          <MonthCard label="Total Expenses" value={fmtEuro(totalExpenses)} sub="reimbursed" accent={C.blue}/>
-          <MonthCard label="Total Paid out" value={fmtEuro(totalPaid)} sub="by boss" accent="#a78bfa"/>
+          <MonthCard label="Total Earned" value={fmtEuroRound(totalEarned)} sub="all time" accent={C.green}/>
+          <MonthCard label="Total Expenses" value={fmtEuroRound(totalExpenses)} sub="reimbursed" accent={C.blue}/>
+          <MonthCard label="Total Paid out" value={fmtEuroRound(totalPaid)} sub="by boss" accent="#a78bfa"/>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-          <AnalCard label="This month" value={fmtEuro(earnedThis)} accent={C.pink} note={`${hoursThis.toFixed(1)}h worked`}/>
-          <AnalCard label="Avg last 3 months" value={fmtEuro(avg3)} accent={C.blue} note="complete months"/>
-          <AnalCard label="Avg last 6 months" value={fmtEuro(avg6)} accent={C.green} note="complete months"/>
-          <AnalCard label="Avg last 12 months" value={fmtEuro(avg12)} accent={C.pink} note="complete months"/>
-          <AnalCard label="All-time avg" value={fmtEuro(avgAll)} accent={C.blue} note="complete months"/>
-          <AnalCard label="Avg since €20/hr" value={fmtEuro(avgRaise)} accent={C.green} note={`${sinceRaise.length} months`}/>
+          <AnalCard label="This month" value={fmtEuroRound(earnedThis)} accent={C.pink} note={`${hoursThis.toFixed(1)}h worked`}/>
+          <AnalCard label="Avg last 3 months" value={fmtEuroRound(avg3)} accent={C.blue} note="complete months"/>
+          <AnalCard label="Avg last 6 months" value={fmtEuroRound(avg6)} accent={C.green} note="complete months"/>
+          <AnalCard label="Avg last 12 months" value={fmtEuroRound(avg12)} accent={C.pink} note="complete months"/>
+          <AnalCard label="All-time avg" value={fmtEuroRound(avgAll)} accent={C.blue} note="complete months"/>
+          <AnalCard label="Avg since €20/hr" value={fmtEuroRound(avgRaise)} accent={C.green} note={`${sinceRaise.length} months`}/>
           <AnalCard label="Total hours" value={totalHours.toFixed(1)+"h"} accent={C.pink} note={`${sessions.length} sessions`}/>
           <AnalCard label="Airport trips" value={airports.length} accent={C.blue} note="total"/>
         </div>
@@ -596,12 +600,12 @@ function Analytics({sessions,airports,payments,activities,totalEarned,totalExpen
             </div>
           </div>
           <div style={{display:"flex",alignItems:"flex-end",gap:4,height:90}}>
-            {last6.map(k=>{const val=chartData[k]||0;const bh=Math.max(4,(val/maxVal)*70);const lbl=monthView==="earned"?fmtEuro(val):val.toFixed(1)+"h";return(<div key={k} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span style={{fontSize:7,color:"#f472a0",fontWeight:700,textAlign:"center",lineHeight:1.2}}>{lbl}</span><div style={{width:"100%",background:monthView==="earned"?`linear-gradient(180deg,${C.pink},#f4a7bb)`:`linear-gradient(180deg,${C.blue},#a8d4f5)`,borderRadius:"4px 4px 0 0",height:bh}}/><span style={{fontSize:7,color:"#a06080",fontWeight:600,textAlign:"center"}}>{smy(k)}</span></div>);})}
+            {last6.map(k=>{const val=chartData[k]||0;const bh=Math.max(4,(val/maxVal)*70);const lbl=monthView==="earned"?fmtEuroRound(val):val.toFixed(1)+"h";return(<div key={k} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span style={{fontSize:7,color:"#f472a0",fontWeight:700,textAlign:"center",lineHeight:1.2}}>{lbl}</span><div style={{width:"100%",background:monthView==="earned"?`linear-gradient(180deg,${C.pink},#f4a7bb)`:`linear-gradient(180deg,${C.blue},#a8d4f5)`,borderRadius:"4px 4px 0 0",height:bh}}/><span style={{fontSize:7,color:"#a06080",fontWeight:600,textAlign:"center"}}>{smy(k)}</span></div>);})}
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
-          <FunFact icon="🏆" label="Best month" value={bestKey?lm(bestKey):"—"} sub={bestKey?fmtEuro(monthEarned[bestKey]):""}/>
-          <FunFact icon="📉" label="Quietest" value={worstKey?lm(worstKey):"—"} sub={worstKey?fmtEuro(monthEarned[worstKey]):""}/>
+          <FunFact icon="🏆" label="Best month" value={bestKey?lm(bestKey):"—"} sub={bestKey?fmtEuroRound(monthEarned[bestKey]):""}/>
+          <FunFact icon="📉" label="Quietest" value={worstKey?lm(worstKey):"—"} sub={worstKey?fmtEuroRound(monthEarned[worstKey]):""}/>
           <FunFact icon="⏰" label="Most hours" value={mostHrsKey?lm(mostHrsKey):"—"} sub={mostHrsKey?(monthHours[mostHrsKey]||0).toFixed(1)+"h":""}/>
           <FunFact icon="💸" label="Avg pay gap" value={avgGap>0?`${avgGap.toFixed(0)} days`:"—"} sub="between payments"/>
         </div>
@@ -611,7 +615,7 @@ function Analytics({sessions,airports,payments,activities,totalEarned,totalExpen
             <span>Month</span><span style={{textAlign:"right"}}>Hours</span><span style={{textAlign:"right"}}>Earned</span>
           </div>
           <div style={{maxHeight:280,overflowY:"auto"}}>
-            {[...allKeys].reverse().map(k=>{const isThis=k===thisMonth;return(<div key={k} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",padding:"5px 0",borderBottom:"1px solid #1e1e2a",background:isThis?"#1e1a24":"transparent"}}><span style={{fontSize:11,fontWeight:isThis?700:500,color:isThis?"#f472a0":"#f0edf5"}}>{lm(k)}{isThis?" ★":""}</span><span style={{fontSize:11,textAlign:"right",color:"#6b6b80"}}>{(monthHours[k]||0).toFixed(1)}h</span><span style={{fontSize:11,textAlign:"right",fontWeight:600,color:C.green}}>{fmtEuro(monthEarned[k]||0)}</span></div>);})}
+            {[...allKeys].reverse().map(k=>{const isThis=k===thisMonth;return(<div key={k} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",padding:"5px 0",borderBottom:"1px solid #1e1e2a",background:isThis?"#1e1a24":"transparent"}}><span style={{fontSize:11,fontWeight:isThis?700:500,color:isThis?"#f472a0":"#f0edf5"}}>{lm(k)}{isThis?" ★":""}</span><span style={{fontSize:11,textAlign:"right",color:"#6b6b80"}}>{(monthHours[k]||0).toFixed(1)}h</span><span style={{fontSize:11,textAlign:"right",fontWeight:600,color:C.green}}>{fmtEuroRound(monthEarned[k]||0)}</span></div>);})}
           </div>
         </div>
       </div>
@@ -646,7 +650,7 @@ function EditModal({session,onSave,onClose}){
   const[form,setForm]=useState({...session});
   function ch(s,e){if(!s||!e)return 0;const[sh,sm]=s.split(":").map(Number);const[eh,em]=e.split(":").map(Number);return Math.max(0,((eh*60+em)-(sh*60+sm))/60);}
   const hrs=ch(form.startTime,form.endTime);const rate=rateForDate(form.date);
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="💰 Expenses"><input style={S.input} type="number" min="0" step="0.01" value={form.other} onChange={e=>setForm(p=>({...p,other:+e.target.value}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><Field label="🕔 End"><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></Field></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="💰 Expenses"><input style={S.input} type="number" min="0" step="0.01" value={form.other} onChange={e=>setForm(p=>({...p,other:+e.target.value.replace(",",".")}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><Field label="🕔 End"><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></Field></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
 }
 
 function EditAirportModal({airport,onSave,onClose}){
