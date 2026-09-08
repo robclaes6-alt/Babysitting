@@ -187,6 +187,7 @@ export default function App() {
         </div>
       )}
       <style>{`@keyframes fadein{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
+      {editingSession&&<EditModal session={editingSession} onSave={saveEdit} onClose={()=>setEditingSession(null)}/>}
       {editingAirport&&<EditAirportModal airport={editingAirport} onSave={saveAirportEdit} onClose={()=>setEditingAirport(null)}/>}
       {editingPayment&&<EditPaymentModal payment={editingPayment} onSave={savePaymentEdit} onClose={()=>setEditingPayment(null)}/>}
       {editingActivity&&<EditActivityModal activity={editingActivity} onSave={saveActivityEdit} onClose={()=>setEditingActivity(null)}/>}
