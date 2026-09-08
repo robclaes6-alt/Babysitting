@@ -131,8 +131,8 @@ export default function App() {
   const allPayments=[...payments].reverse();
 
   // Tabs: Hours first, then Summary, Payment, Airport, Activity, Analytics
-  const tabs=[["hours","⏰"],["dashboard","📋"],["payment","💰"],["airport","✈️"],["activity","🎪"],["analytics","📊"]];
-  const tabLabels={hours:"Hours",dashboard:"Summary",payment:"Payment",airport:"Airport",activity:"Activity",analytics:"Analytics"};
+  const tabs=[["hours","⏰"],["dashboard","📋"],["payment","💰"],["services","✈️"],["analytics","📊"]];
+  const tabLabels={hours:"Hours",dashboard:"Summary",payment:"Payment",services:"Services",analytics:"Analytics"};
 
   if(loading)return(
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fdf5f8",flexDirection:"column",gap:16}}>
@@ -164,8 +164,7 @@ export default function App() {
         {tab==="dashboard"&&<Dashboard sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid} balance={balance} recentSessions={recentSessions} recentAirports={recentAirports} allPayments={allPayments} showHistory={showHistory} setShowHistory={setShowHistory} deleteItem={deleteItem} setEditingSession={setEditingSession} setEditingAirport={setEditingAirport} setEditingPayment={setEditingPayment} setEditingActivity={setEditingActivity}/>}
         {tab==="hours"&&<LogHours newSession={newSession} setNewSession={setNewSession} addSession={addSession} recentSessions={recentSessions} allSessions={sessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/>}
         {tab==="payment"&&<LogPayment newPayment={newPayment} setNewPayment={setNewPayment} addPayment={addPayment} allPayments={allPayments} deleteItem={deleteItem} setEditingPayment={setEditingPayment}/>}
-        {tab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={airports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
-        {tab==="activity"&&<LogActivity newActivity={newActivity} setNewActivity={setNewActivity} addActivity={addActivity} activities={activities} deleteItem={deleteItem} setEditingActivity={setEditingActivity}/>}
+        {tab==="services"&&<LogServices newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={airports} deleteItem={deleteItem} setEditingAirport={setEditingAirport} newActivity={newActivity} setNewActivity={setNewActivity} addActivity={addActivity} activities={activities} setEditingActivity={setEditingActivity}/>}
         {tab==="analytics"&&<Analytics sessions={sessions} airports={airports} payments={payments} activities={activities} totalEarned={totalEarned} totalExpenses={totalExpenses} totalPaid={totalPaid}/>}
       </main>
 
@@ -211,8 +210,7 @@ function QuickLogHours({newSession,setNewSession,addSession,onClose}){
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
-          <Field label="🅿️ Parking (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.parking} onChange={e=>setNewSession(p=>({...p,parking:e.target.value}))}/></Field>
-          <Field label="📦 Other (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
         <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>Add Session 🐾</button>
@@ -330,7 +328,7 @@ function RecentActivity({sessions,airports,payments,activities,deleteItem,setEdi
         const weekLabel=ws?new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"";
         let card;
         if(item._type==="session"){
-          const exp=[];if(item.parking>0)exp.push(`🅿️ €${item.parking.toFixed(2)}`);if(item.other>0)exp.push(`📦 €${item.other.toFixed(2)}`);
+          const exp=[];if(item.other>0)exp.push(`💰 €${item.other.toFixed(2)}`);
           card=(
             <div key={item.id+"s"} style={{...S.listItem,borderLeft:"3px solid #f4a7bb"}}>
               <div style={{...S.listLeft,gap:1}}>
@@ -402,26 +400,37 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
-          <Field label="🅿️ Parking (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.parking} onChange={e=>setNewSession(p=>({...p,parking:e.target.value}))}/></Field>
-          <Field label="📦 Other (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value}))}/></Field>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
         <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>Add Session 🐾</button>
       </div>
       <Sect title={showAll?`All Sessions (${filtered.length})`:"Recent Sessions"}>
-        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10,flexWrap:"wrap"}}>
-          <button style={{...S.toggleBtn,...(showAll?{background:"#fce7f0",color:"#b5476a",borderColor:"#f4a7bb"}:{})}} onClick={()=>{setShowAll(p=>!p);setFilterMonth("");}}>
-            {showAll?"▲ Recent only":`▼ All ${allSessions.length} sessions`}
-          </button>
-          {showAll&&<select style={{...S.input,width:"auto",fontSize:12,padding:"6px 10px"}} value={filterMonth} onChange={e=>setFilterMonth(e.target.value)}><option value="">All months</option>{months.map(m=>{const[y,mo]=m.split("-");return<option key={m} value={m}>{new Date(+y,+mo-1,1).toLocaleDateString("en",{month:"long",year:"numeric"})}</option>;})}</select>}
-        </div>
-        <SessionList sessions={displayed} deleteItem={deleteItem} setEditingSession={setEditingSession}/>
+        <SessionList sessions={recentSessions} deleteItem={deleteItem} setEditingSession={setEditingSession}/>
       </Sect>
     </div>
   );
 }
 
-function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,allAirports,deleteItem,setEditingAirport}){
+function LogServices({newAirport,setNewAirport,addAirport,recentAirports,allAirports,deleteItem,setEditingAirport,newActivity,setNewActivity,addActivity,activities,setEditingActivity}){
+  const [subTab,setSubTab]=useState("airport");
+  return(
+    <div>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        <button onClick={()=>setSubTab("airport")} style={{flex:1,padding:"10px",borderRadius:12,border:"none",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="airport"?"linear-gradient(135deg,#a8d4f5,#c4dff5)":"white",color:subTab==="airport"?"#2a5c8a":"#c9a0b0",boxShadow:subTab==="airport"?"0 3px 12px #a8d4f544":"none",border:subTab==="airport"?"none":"1.5px solid #fce7f0"}}>
+          ✈️ Airport Trip
+        </button>
+        <button onClick={()=>setSubTab("activity")} style={{flex:1,padding:"10px",borderRadius:12,border:"none",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="activity"?"linear-gradient(135deg,#c4b0f5,#e0d8ff)":"white",color:subTab==="activity"?"#6b48d4":"#c9a0b0",boxShadow:subTab==="activity"?"0 3px 12px #c4b0f544":"none",border:subTab==="activity"?"none":"1.5px solid #fce7f0"}}>
+          🎪 Activity
+        </button>
+      </div>
+      {subTab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={allAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
+      {subTab==="activity"&&<LogActivity newActivity={newActivity} setNewActivity={setNewActivity} addActivity={addActivity} activities={activities} deleteItem={deleteItem} setEditingActivity={setEditingActivity}/>}
+    </div>
+  );
+}
+
+newAirport,setNewAirport,addAirport,recentAirports,allAirports,deleteItem,setEditingAirport}){
   const info=AIRPORTS[newAirport.airport]||AIRPORTS.Brussels;
   const[showAll,setShowAll]=useState(false);
   const displayed=showAll?[...allAirports].reverse():recentAirports;
@@ -432,7 +441,7 @@ function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,allAirpo
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newAirport.date} onChange={e=>setNewAirport(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="🛫 Airport"><select style={S.input} value={newAirport.airport} onChange={e=>setNewAirport(p=>({...p,airport:e.target.value}))}>{Object.keys(AIRPORTS).map(a=><option key={a}>{a}</option>)}</select></Field>
-          <Field label="🅿️ Parking (€)"><input style={S.input} type="number" min="0" step="0.01" value={newAirport.parking} onChange={e=>setNewAirport(p=>({...p,parking:e.target.value}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newAirport.parking} onChange={e=>setNewAirport(p=>({...p,parking:e.target.value}))}/></Field>
         </div>
         <div style={S.preview}><span>{newAirport.airport} Airport</span><span style={S.previewAmt}>{fmtEuro(info.earned)}</span></div>
         <button style={S.primaryBtn} onClick={addAirport}>Add Trip 🐾</button>
@@ -603,7 +612,7 @@ function SessionList({sessions,deleteItem,setEditingSession}){
   return(<div style={S.list}>{sessions.map(s=>{
     const ws=weekStart(s.date);const showDivider=ws!==lastWeek;lastWeek=ws;
     const weekLabel=new Date(ws).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
-    const exp=[];if(s.parking>0)exp.push(`🅿️ €${s.parking.toFixed(2)}`);if(s.other>0)exp.push(`📦 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);
+    const exp=[];if(s.other>0)exp.push(`💰 €${s.other.toFixed(2)}`);if(s.gas>0)exp.push(`⛽ €${s.gas.toFixed(2)}`);
     return(<>{showDivider&&<WeekDivider key={"w"+ws} label={weekLabel}/>}<div key={s.id} style={{...S.listItem,borderLeft:"3px solid #f4a7bb"}}><div style={S.listLeft}><span style={S.listDate}>{fmtDate(new Date(s.date))}</span><span style={S.listSub}>{s.startTime} – {s.endTime} · {s.hours.toFixed(2)}h</span>{exp.length>0&&<span style={{fontSize:10,color:"#c9a0b0",marginTop:1}}>{exp.join("  ")}</span>}</div><div style={S.listRight}><span style={{...S.listAmt,color:C.green}}>{fmtEuro(s.earned)}</span><button style={S.editBtn} onClick={()=>setEditingSession(s)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("session",s.id)}>✕</button></div></div></>);
   })}</div>);
 }
@@ -623,12 +632,12 @@ function EditModal({session,onSave,onClose}){
   const[form,setForm]=useState({...session});
   function ch(s,e){if(!s||!e)return 0;const[sh,sm]=s.split(":").map(Number);const[eh,em]=e.split(":").map(Number);return Math.max(0,((eh*60+em)-(sh*60+sm))/60);}
   const hrs=ch(form.startTime,form.endTime);const rate=rateForDate(form.date);
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><Field label="🕔 End"><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></Field><Field label="⏱ Hours"><div style={{...S.input,background:"#fce7f0",color:"#b5476a",fontWeight:700}}>{hrs>0?`${hrs.toFixed(2)} hrs`:"—"}</div></Field><Field label="🅿️ Parking"><input style={S.input} type="number" min="0" step="0.01" value={form.parking} onChange={e=>setForm(p=>({...p,parking:+e.target.value}))}/></Field><Field label="📦 Other"><input style={S.input} type="number" min="0" step="0.01" value={form.other} onChange={e=>setForm(p=>({...p,other:+e.target.value}))}/></Field></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><Field label="🕔 End"><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></Field><Field label="⏱ Hours"><div style={{...S.input,background:"#fce7f0",color:"#b5476a",fontWeight:700}}>{hrs>0?`${hrs.toFixed(2)} hrs`:"—"}</div></Field><Field label="💰 Expenses"><input style={S.input} type="number" min="0" step="0.01" value={form.other} onChange={e=>setForm(p=>({...p,other:+e.target.value}))}/></Field></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
 }
 
 function EditAirportModal({airport,onSave,onClose}){
   const[form,setForm]=useState({...airport});
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>✏️ Edit Airport Trip</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="🛫 Airport"><select style={S.input} value={form.airport} onChange={e=>setForm(p=>({...p,airport:e.target.value}))}>{Object.keys(AIRPORTS).map(a=><option key={a}>{a}</option>)}</select></Field><Field label="🅿️ Parking"><input style={S.input} type="number" min="0" step="0.01" value={form.parking} onChange={e=>setForm(p=>({...p,parking:+e.target.value}))}/></Field><Field label="💶 Earned"><input style={S.input} type="number" min="0" step="0.01" value={form.earned} onChange={e=>setForm(p=>({...p,earned:+e.target.value}))}/></Field></div><div style={S.preview}><span>{form.airport}</span><span style={S.previewAmt}>{fmtEuro((form.earned||0)+(form.parking||0))}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#b5476a",fontSize:16,fontWeight:800}}>✏️ Edit Airport Trip</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="🛫 Airport"><select style={S.input} value={form.airport} onChange={e=>setForm(p=>({...p,airport:e.target.value}))}>{Object.keys(AIRPORTS).map(a=><option key={a}>{a}</option>)}</select></Field><Field label="💶 Earned"><input style={S.input} type="number" min="0" step="0.01" value={form.earned} onChange={e=>setForm(p=>({...p,earned:+e.target.value}))}/></Field></div><div style={S.preview}><span>{form.airport}</span><span style={S.previewAmt}>{fmtEuro((form.earned||0)+(form.parking||0))}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
 }
 
 function EditPaymentModal({payment,onSave,onClose}){
