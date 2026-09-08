@@ -439,12 +439,13 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
-          <Field label="🕐 Start">
-            <div style={{position:"relative"}}>
-              <input style={{...S.input,paddingRight: newSession.startTime?"36px":"14px"}} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/>
-              {newSession.startTime&&<button onClick={()=>{setNewSession(p=>({...p,startTime:""}));localStorage.removeItem("yarden_session_draft");}} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"#3a3a4a",border:"none",color:"#f0edf5",borderRadius:6,padding:"2px 7px",cursor:"pointer",fontSize:12,lineHeight:1.5}}>✕</button>}
+          <label style={S.label}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <span>🕐 Start</span>
+              {newSession.startTime&&<button onClick={()=>{setNewSession(p=>({...p,startTime:""}));localStorage.removeItem("yarden_session_draft");}} style={{background:"#3a3a4a",border:"none",color:"#f0edf5",borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:12}}>✕ Clear</button>}
             </div>
-          </Field>
+            <input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/>
+          </label>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
