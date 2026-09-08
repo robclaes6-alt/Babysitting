@@ -418,10 +418,10 @@ function LogServices({newAirport,setNewAirport,addAirport,recentAirports,allAirp
   return(
     <div>
       <div style={{display:"flex",gap:8,marginBottom:16}}>
-        <button onClick={()=>setSubTab("airport")} style={{flex:1,padding:"10px",borderRadius:12,border:"none",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="airport"?"linear-gradient(135deg,#a8d4f5,#c4dff5)":"white",color:subTab==="airport"?"#2a5c8a":"#c9a0b0",boxShadow:subTab==="airport"?"0 3px 12px #a8d4f544":"none",border:subTab==="airport"?"none":"1.5px solid #fce7f0"}}>
+        <button onClick={()=>setSubTab("airport")} style={{flex:1,padding:"10px",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="airport"?"linear-gradient(135deg,#a8d4f5,#c4dff5)":"white",color:subTab==="airport"?"#2a5c8a":"#c9a0b0",boxShadow:subTab==="airport"?"0 3px 12px #a8d4f544":"none",border:subTab==="airport"?"none":"1.5px solid #fce7f0"}}>
           ✈️ Airport Trip
         </button>
-        <button onClick={()=>setSubTab("activity")} style={{flex:1,padding:"10px",borderRadius:12,border:"none",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="activity"?"linear-gradient(135deg,#c4b0f5,#e0d8ff)":"white",color:subTab==="activity"?"#6b48d4":"#c9a0b0",boxShadow:subTab==="activity"?"0 3px 12px #c4b0f544":"none",border:subTab==="activity"?"none":"1.5px solid #fce7f0"}}>
+        <button onClick={()=>setSubTab("activity")} style={{flex:1,padding:"10px",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="activity"?"linear-gradient(135deg,#c4b0f5,#e0d8ff)":"white",color:subTab==="activity"?"#6b48d4":"#c9a0b0",boxShadow:subTab==="activity"?"0 3px 12px #c4b0f544":"none",border:subTab==="activity"?"none":"1.5px solid #fce7f0"}}>
           🎪 Activity
         </button>
       </div>
