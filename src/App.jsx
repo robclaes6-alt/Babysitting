@@ -36,6 +36,7 @@ export default function App() {
   const [toast,setToast]=useState(null);
   function showToast(msg,color="#5db887"){setToast({msg,color});setTimeout(()=>setToast(null),2500);}
 
+  const [newSession,setNewSession]=useState({date:today(),startTime:"",endTime:"",parking:0,other:0});
   const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:0});
   const [newPayment,setNewPayment]=useState({date:today(),amount:""});
   const [newActivity,setNewActivity]=useState({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
