@@ -68,7 +68,7 @@ export default function App() {
   }
   const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:0});
   const [newPayment,setNewPayment]=useState({date:today(),amount:""});
-  const [newActivity,setNewActivity]=useState({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:"",customDescription:""});
+  const [newActivity,setNewActivity]=useState({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:today(),customDescription:"",expenses:0});
 
   useEffect(()=>{
     async function load(){
@@ -135,10 +135,10 @@ export default function App() {
   async function addActivity(){
     const desc = newActivity.description==="custom" ? newActivity.customDescription : newActivity.description;
     if(!desc||!newActivity.amount)return;
-    const data={description:desc,amount:+newActivity.amount,excludeFromOwed:!!newActivity.excludeFromOwed,dateFrom:newActivity.date||"",dateTo:""};
+    const data={description:desc,amount:+newActivity.amount,expenses:+newActivity.expenses||0,excludeFromOwed:!!newActivity.excludeFromOwed,dateFrom:newActivity.date||today(),dateTo:""};
     const item=await addItem("activities",data);
     setActivities(prev=>[...prev,item].sort((a,b)=>(a.dateFrom||"").localeCompare(b.dateFrom||"")));
-    setNewActivity({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:"",customDescription:""});
+    setNewActivity({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:today(),customDescription:"",expenses:0});
     showToast("✅ Activity added!","#a78bfa");
   }
   async function saveActivityEdit(updated){
@@ -464,11 +464,11 @@ function LogServices({newAirport,setNewAirport,addAirport,recentAirports,allAirp
   return(
     <div>
       <div style={{display:"flex",gap:8,marginBottom:16}}>
-        <button onClick={()=>setSubTab("airport")} style={{flex:1,padding:"10px",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="airport"?"linear-gradient(135deg,#1a3a5a,#2a4a6a)":"#12121a",color:subTab==="airport"?"#2a5c8a":"#6b6b80",boxShadow:subTab==="airport"?"0 3px 12px #a8d4f544":"none",border:subTab==="airport"?"none":"1.5px solid #fce7f0"}}>
-          ✈️ Airport Trip
-        </button>
-        <button onClick={()=>setSubTab("activity")} style={{flex:1,padding:"10px",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="activity"?"linear-gradient(135deg,#2a1a4a,#3a2a5a)":"#12121a",color:subTab==="activity"?"#6b48d4":"#6b6b80",boxShadow:subTab==="activity"?"0 3px 12px #c4b0f544":"none",border:subTab==="activity"?"none":"1.5px solid #fce7f0"}}>
+        <button onClick={()=>setSubTab("activity")} style={{flex:1,padding:"10px",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="activity"?"linear-gradient(135deg,#2a1a4a,#3a2a5a)":"#12121a",color:subTab==="activity"?"#a78bfa":"#6b6b80",boxShadow:subTab==="activity"?"0 3px 12px #c4b0f544":"none",border:subTab==="activity"?"none":"1px solid #2a2a3a"}}>
           🎪 Activity
+        </button>
+        <button onClick={()=>setSubTab("airport")} style={{flex:1,padding:"10px",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",background:subTab==="airport"?"linear-gradient(135deg,#1a3a5a,#2a4a6a)":"#12121a",color:subTab==="airport"?"#60a5fa":"#6b6b80",boxShadow:subTab==="airport"?"0 3px 12px #a8d4f544":"none",border:subTab==="airport"?"none":"1px solid #2a2a3a"}}>
+          ✈️ Airport Trip
         </button>
       </div>
       {subTab==="airport"&&<LogAirport newAirport={newAirport} setNewAirport={setNewAirport} addAirport={addAirport} recentAirports={recentAirports} allAirports={allAirports} deleteItem={deleteItem} setEditingAirport={setEditingAirport}/>}
@@ -547,8 +547,11 @@ function LogActivity({newActivity,setNewActivity,addActivity,activities,deleteIt
           {isCustom&&<Field label="📝 Description">
             <input style={{...S.input,color:"#f0edf5"}} type="text" placeholder="Describe the activity..." value={newActivity.customDescription||""} onChange={e=>setNewActivity(p=>({...p,customDescription:e.target.value}))}/>
           </Field>}
-          <Field label="📅 Date (optional)">
-            <input style={S.input} type="date" value={newActivity.date||""} onChange={e=>setNewActivity(p=>({...p,date:e.target.value}))}/>
+          <Field label="📅 Date">
+            <input style={S.input} type="date" value={newActivity.date||today()} onChange={e=>setNewActivity(p=>({...p,date:e.target.value}))}/>
+          </Field>
+          <Field label="💰 Expenses (€)">
+            <input style={S.input} type="number" min="0" step="0.01" placeholder="0" value={newActivity.expenses||0} onChange={e=>setNewActivity(p=>({...p,expenses:e.target.value.replace(",",".")}))}/>
           </Field>
         </div>
         <label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:newActivity.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1.5px solid ${newActivity.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}>
@@ -572,6 +575,7 @@ function LogActivity({newActivity,setNewActivity,addActivity,activities,deleteIt
                   {a.excludeFromOwed&&<span style={{fontSize:10,background:"#3a2a10",color:"#f0a830",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Not in balance</span>}
                 </div>
                 {a.dateFrom&&<span style={S.listSub}>{fmtDate(new Date(a.dateFrom))}</span>}
+                {a.expenses>0&&<span style={{fontSize:11,color:"#6b6b80"}}>💰 Expenses: {fmtEuro(a.expenses)}</span>}
               </div>
               <div style={S.listRight}>
                 <span style={{...S.listAmt,color:a.excludeFromOwed?"#f0a830":"#a78bfa"}}>{fmtEuro(a.amount)}</span>
@@ -710,7 +714,7 @@ function EditPaymentModal({payment,onSave,onClose}){
 
 function EditActivityModal({activity,onSave,onClose}){
   const[form,setForm]=useState({...activity});
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📝 Description"><input style={{...S.input,color:"#f0edf5"}} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field><Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field><Field label="📅 Date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field></div><label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1px solid ${form.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}><input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#f0a830"}}/><div><div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#f0a830":"#f0edf5"}}>Not paid by regular boss</div><div style={{fontSize:11,color:"#6b6b80"}}>Excludes from "Still Owed" balance</div></div></label><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#2a2a3a",color:"#f0edf5",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📝 Description"><input style={{...S.input,color:"#f0edf5"}} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field><Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field><Field label="📅 Date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field><Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.expenses||0} onChange={e=>setForm(p=>({...p,expenses:+e.target.value}))}/></Field></div><label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1px solid ${form.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}><input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#f0a830"}}/><div><div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#f0a830":"#f0edf5"}}>Not paid by regular boss</div><div style={{fontSize:11,color:"#6b6b80"}}>Excludes from "Still Owed" balance</div></div></label><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#2a2a3a",color:"#f0edf5",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
 }
 
 // ── Shared small components ───────────────────────────────────────────────────
