@@ -407,7 +407,7 @@ function RecentActivity({sessions,airports,payments,activities,deleteItem,setEdi
                   <span style={S.listDate}>{item.description}</span>
                   {item.excludeFromOwed&&<span style={{fontSize:10,background:"#3a2a10",color:"#f0a830",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Not in balance</span>}
                 </div>
-                {(item.dateFrom||item.dateTo)&&<span style={S.listSub}>{item.dateFrom?fmtDate(new Date(item.dateFrom)):""}{item.dateTo&&item.dateFrom?" → ":""}{item.dateTo?fmtDate(new Date(item.dateTo)):""}</span>}
+                {item.dateFrom&&<span style={S.listSub}>{fmtDate(new Date(item.dateFrom))}</span>}
               </div>
               <div style={S.listRight}><span style={{...S.listAmt,color:item.excludeFromOwed?"#f0a830":"#a78bfa"}}>{fmtEuro(item.amount)}</span><button style={S.editBtn} onClick={()=>setEditingActivity(item)}>✏️</button><button style={S.deleteBtn} onClick={()=>deleteItem("activity",item.id)}>✕</button></div>
             </div>
@@ -460,7 +460,7 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
 }
 
 function LogServices({newAirport,setNewAirport,addAirport,recentAirports,allAirports,deleteItem,setEditingAirport,newActivity,setNewActivity,addActivity,activities,setEditingActivity}){
-  const [subTab,setSubTab]=useState("airport");
+  const [subTab,setSubTab]=useState("activity");
   return(
     <div>
       <div style={{display:"flex",gap:8,marginBottom:16}}>
@@ -710,7 +710,7 @@ function EditPaymentModal({payment,onSave,onClose}){
 
 function EditActivityModal({activity,onSave,onClose}){
   const[form,setForm]=useState({...activity});
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📝 Description"><input style={S.input} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field><Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field><Field label="📅 From date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field><Field label="📅 To date"><input style={S.input} type="date" value={form.dateTo||""} onChange={e=>setForm(p=>({...p,dateTo:e.target.value}))}/></Field></div><label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1.5px solid ${form.excludeFromOwed?"#ffe0b0":"#2a2a3a"}`}}><input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#f0a830"}}/><div><div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#f0a830":"#f0edf5"}}>Not paid by regular boss</div><div style={{fontSize:11,color:"#6b6b80"}}>Excludes from "Still Owed" balance</div></div></label><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📝 Description"><input style={{...S.input,color:"#f0edf5"}} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field><Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field><Field label="📅 Date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field></div><label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1px solid ${form.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}><input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#f0a830"}}/><div><div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#f0a830":"#f0edf5"}}>Not paid by regular boss</div><div style={{fontSize:11,color:"#6b6b80"}}>Excludes from "Still Owed" balance</div></div></label><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#2a2a3a",color:"#f0edf5",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
 }
 
 // ── Shared small components ───────────────────────────────────────────────────
