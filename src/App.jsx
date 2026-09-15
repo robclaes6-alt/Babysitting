@@ -68,7 +68,7 @@ export default function App() {
   }
   const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:0});
   const [newPayment,setNewPayment]=useState({date:today(),amount:""});
-  const [newActivity,setNewActivity]=useState({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
+  const [newActivity,setNewActivity]=useState({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:"",customDescription:""});
 
   useEffect(()=>{
     async function load(){
@@ -133,11 +133,12 @@ export default function App() {
   }
 
   async function addActivity(){
-    if(!newActivity.description||!newActivity.amount)return;
-    const data={description:newActivity.description,amount:+newActivity.amount,excludeFromOwed:!!newActivity.excludeFromOwed,dateFrom:newActivity.dateFrom||"",dateTo:newActivity.dateTo||""};
+    const desc = newActivity.description==="custom" ? newActivity.customDescription : newActivity.description;
+    if(!desc||!newActivity.amount)return;
+    const data={description:desc,amount:+newActivity.amount,excludeFromOwed:!!newActivity.excludeFromOwed,dateFrom:newActivity.date||"",dateTo:""};
     const item=await addItem("activities",data);
     setActivities(prev=>[...prev,item].sort((a,b)=>(a.dateFrom||"").localeCompare(b.dateFrom||"")));
-    setNewActivity({description:"",amount:"",excludeFromOwed:false,dateFrom:"",dateTo:""});
+    setNewActivity({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:"",customDescription:""});
     showToast("✅ Activity added!","#a78bfa");
   }
   async function saveActivityEdit(updated){
@@ -524,37 +525,53 @@ function LogPayment({newPayment,setNewPayment,addPayment,allPayments,deleteItem,
 
 function LogActivity({newActivity,setNewActivity,addActivity,activities,deleteItem,setEditingActivity}){
   const allDesc=[...activities].reverse();
+  const isCustom = newActivity.description==="custom";
+  const hasDesc = isCustom ? !!newActivity.customDescription : !!newActivity.description;
   return(
     <div>
       <div style={S.card}>
         <div style={{marginBottom:16}}><h2 style={S.cardTitle}>Log Activity 🎪</h2></div>
         <div style={S.formGrid}>
-          <Field label="📝 Description"><input style={S.input} type="text" placeholder="e.g. Zomerkamp 2026" value={newActivity.description} onChange={e=>setNewActivity(p=>({...p,description:e.target.value}))}/></Field>
-          <Field label="💶 Amount earned (€)"><input style={S.input} type="number" min="0" step="0.01" placeholder="0.00" value={newActivity.amount} onChange={e=>setNewActivity(p=>({...p,amount:e.target.value}))}/></Field>
-          <Field label="📅 From date (optional)"><input style={S.input} type="date" value={newActivity.dateFrom} onChange={e=>setNewActivity(p=>({...p,dateFrom:e.target.value}))}/></Field>
-          <Field label="📅 To date (optional)"><input style={S.input} type="date" value={newActivity.dateTo} onChange={e=>setNewActivity(p=>({...p,dateTo:e.target.value}))}/></Field>
+          <Field label="📝 Type">
+            <select style={{...S.input,color:"#f0edf5"}} value={newActivity.description} onChange={e=>{
+              const val=e.target.value;
+              setNewActivity(p=>({...p,description:val,amount:val==="Hebrew lesson"?"35":p.amount}));
+            }}>
+              <option value="Hebrew lesson">Hebrew lesson</option>
+              <option value="custom">✏️ Custom...</option>
+            </select>
+          </Field>
+          <Field label="💶 Amount (€)">
+            <input style={S.input} type="number" min="0" step="0.01" placeholder="0.00" value={newActivity.amount} onChange={e=>setNewActivity(p=>({...p,amount:e.target.value.replace(",",".")}))}/>
+          </Field>
+          {isCustom&&<Field label="📝 Description">
+            <input style={{...S.input,color:"#f0edf5"}} type="text" placeholder="Describe the activity..." value={newActivity.customDescription||""} onChange={e=>setNewActivity(p=>({...p,customDescription:e.target.value}))}/>
+          </Field>}
+          <Field label="📅 Date (optional)">
+            <input style={S.input} type="date" value={newActivity.date||""} onChange={e=>setNewActivity(p=>({...p,date:e.target.value}))}/>
+          </Field>
         </div>
-        <label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:newActivity.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1.5px solid ${newActivity.excludeFromOwed?"#ffe0b0":"#2a2a3a"}`}}>
+        <label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:newActivity.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1.5px solid ${newActivity.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}>
           <input type="checkbox" checked={!!newActivity.excludeFromOwed} onChange={e=>setNewActivity(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#f0a830"}}/>
           <div>
             <div style={{fontSize:13,fontWeight:700,color:newActivity.excludeFromOwed?"#f0a830":"#f0edf5"}}>Not paid by regular boss</div>
             <div style={{fontSize:11,color:"#6b6b80"}}>Excludes this from the "Still Owed" balance</div>
           </div>
         </label>
-        <button style={{...S.primaryBtn,opacity:(newActivity.description&&newActivity.amount)?1:0.5}} onClick={addActivity} disabled={!newActivity.description||!newActivity.amount}>Add Activity 🐾</button>
+        <button style={{...S.primaryBtn,opacity:(hasDesc&&newActivity.amount)?1:0.5}} onClick={addActivity} disabled={!hasDesc||!newActivity.amount}>+ Log Activity</button>
       </div>
       <Sect title={`Activities (${activities.length})`}>
         {allDesc.length===0&&<p style={S.empty}>No activities yet 🎪</p>}
         <div style={S.list}>
           {allDesc.map(a=>(
-            <div key={a.id} style={{...S.listItem,background:a.excludeFromOwed?"#1e1a14":"white",border:`1px solid ${a.excludeFromOwed?"#3a2a10":"#2a2a3a"}`,borderLeft:`3px solid ${a.excludeFromOwed?"#f0a830":"#a78bfa"}`}}>
+            <div key={a.id} style={{...S.listItem,background:a.excludeFromOwed?"#1e1a14":"#1a1a24",border:`1px solid ${a.excludeFromOwed?"#3a2a10":"#2a2a3a"}`,borderLeft:`3px solid ${a.excludeFromOwed?"#f0a830":"#a78bfa"}`}}>
               <div style={S.listLeft}>
                 <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                  <span style={{fontSize:10,background:a.excludeFromOwed?"#fff0d0":"#f0ecff",color:a.excludeFromOwed?"#f0a830":"#6b48d4",borderRadius:6,padding:"1px 7px",fontWeight:700}}>🎪 Activity</span>
-                  <span style={S.listDate}>{a.description}</span>
+                  <span style={{fontSize:10,background:"#2a1a3a",color:"#a78bfa",borderRadius:6,padding:"1px 7px",fontWeight:700}}>🎪 Activity</span>
+                  <span style={{...S.listDate,color:"#f0edf5"}}>{a.description}</span>
                   {a.excludeFromOwed&&<span style={{fontSize:10,background:"#3a2a10",color:"#f0a830",borderRadius:6,padding:"1px 7px",fontWeight:700}}>Not in balance</span>}
                 </div>
-                {(a.dateFrom||a.dateTo)&&<span style={S.listSub}>{a.dateFrom?fmtDate(new Date(a.dateFrom)):""}{a.dateTo&&a.dateFrom?" → ":""}{a.dateTo?fmtDate(new Date(a.dateTo)):""}</span>}
+                {a.dateFrom&&<span style={S.listSub}>{fmtDate(new Date(a.dateFrom))}</span>}
               </div>
               <div style={S.listRight}>
                 <span style={{...S.listAmt,color:a.excludeFromOwed?"#f0a830":"#a78bfa"}}>{fmtEuro(a.amount)}</span>
