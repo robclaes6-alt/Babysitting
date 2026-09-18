@@ -242,7 +242,13 @@ function QuickLogHours({newSession,setNewSession,addSession,onClose}){
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} placeholder="0" onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
-          <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <span style={{...S.label,display:"block"}}>🕔 End</span>
+              {newSession.endTime&&<button onTouchEnd={e=>{e.preventDefault();e.stopPropagation();setNewSession(p=>({...p,endTime:""}))}} onClick={e=>{e.preventDefault();e.stopPropagation();setNewSession(p=>({...p,endTime:""}))}} style={{background:"#3a3a4a",border:"none",color:"#f0edf5",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,zIndex:10,position:"relative"}}>✕ Clear</button>}
+            </div>
+            <input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/>
+          </div>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
         <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>+ Log</button>
@@ -447,7 +453,13 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
             </div>
             <input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/>
           </div>
-          <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <span style={{...S.label,display:"block"}}>🕔 End</span>
+              {newSession.endTime&&<button onTouchEnd={e=>{e.preventDefault();e.stopPropagation();setNewSession(p=>({...p,endTime:""}))}} onClick={e=>{e.preventDefault();e.stopPropagation();setNewSession(p=>({...p,endTime:""}))}} style={{background:"#3a3a4a",border:"none",color:"#f0edf5",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,zIndex:10,position:"relative"}}>✕ Clear</button>}
+            </div>
+            <input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/>
+          </div>
         </div>
         {hrs>0&&<div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div>}
         <button style={{...S.primaryBtn,opacity:hrs>0?1:0.5}} onClick={addSession} disabled={hrs<=0}>+ Log</button>
@@ -699,7 +711,7 @@ function EditModal({session,onSave,onClose}){
   const[form,setForm]=useState({...session});
   function ch(s,e){if(!s||!e)return 0;const[sh,sm]=s.split(":").map(Number);const[eh,em]=e.split(":").map(Number);return Math.max(0,((eh*60+em)-(sh*60+sm))/60);}
   const hrs=ch(form.startTime,form.endTime);const rate=rateForDate(form.date);
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="💰 Expenses"><input style={S.input} type="number" min="0" step="0.01" value={form.other||""} placeholder="0" onChange={e=>setForm(p=>({...p,other:+e.target.value.replace(",",".")}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><Field label="🕔 End"><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></Field></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="💰 Expenses"><input style={S.input} type="number" min="0" step="0.01" value={form.other||""} placeholder="0" onChange={e=>setForm(p=>({...p,other:+e.target.value.replace(",",".")}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{...S.label,display:"block"}}>🕔 End</span>{form.endTime&&<button onTouchEnd={e=>{e.preventDefault();e.stopPropagation();setForm(p=>({...p,endTime:""}))}} onClick={e=>{e.preventDefault();e.stopPropagation();setForm(p=>({...p,endTime:""}))}} style={{background:"#3a3a4a",border:"none",color:"#f0edf5",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕ Clear</button>}</div><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></div></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
 }
 
 function EditAirportModal({airport,onSave,onClose}){
