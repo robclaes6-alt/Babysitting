@@ -52,7 +52,7 @@ export default function App() {
       const saved = JSON.parse(localStorage.getItem("yarden_session_draft")||"null");
       if(saved) return {...saved, endTime:"", other: saved.other||0};
     } catch{}
-    return {date:today(),startTime:"",endTime:"",parking:0,other:0};
+    return {date:today(),startTime:"",endTime:"",parking:"",other:""};
   });
   function updateSession(updater) {
     setNewSession(prev => {
@@ -66,9 +66,9 @@ export default function App() {
       return next;
     });
   }
-  const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:0});
+  const [newAirport,setNewAirport]=useState({date:today(),airport:"Brussels",parking:""});
   const [newPayment,setNewPayment]=useState({date:today(),amount:""});
-  const [newActivity,setNewActivity]=useState({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:today(),customDescription:"",expenses:0});
+  const [newActivity,setNewActivity]=useState({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:today(),customDescription:"",expenses:""});
 
   useEffect(()=>{
     async function load(){
@@ -101,7 +101,7 @@ export default function App() {
     const data={date:newSession.date,startTime:newSession.startTime,endTime:newSession.endTime,hours:+hrs.toFixed(4),km:0,gas:0,parking:+newSession.parking,other:+newSession.other,earned:+(hrs*rate).toFixed(4),rate};
     const item=await addItem("sessions",data);
     setSessions(prev=>[...prev,item].sort((a,b)=>a.date.localeCompare(b.date)));
-    setNewSession({date:today(),startTime:"",endTime:"",parking:0,other:0});
+    setNewSession({date:today(),startTime:"",endTime:"",parking:"",other:""});
     localStorage.removeItem("yarden_session_draft");
     showToast("✅ Session added!");
   }
@@ -112,7 +112,7 @@ export default function App() {
     const data={date:newAirport.date,airport:newAirport.airport,parking:+newAirport.parking,gas:+(info.km*FUEL_PER_KM).toFixed(4),earned:info.earned};
     const item=await addItem("airports",data);
     setAirports(prev=>[...prev,item].sort((a,b)=>a.date.localeCompare(b.date)));
-    setNewAirport(p=>({...p,date:today(),parking:0}));
+    setNewAirport(p=>({...p,date:today(),parking:""}));
     showToast("✅ Airport trip added!");
   }
   async function saveAirportEdit(updated){const{id,...data}=updated;await updateItem("airports",id,data);setAirports(prev=>prev.map(x=>x.id===id?updated:x).sort((a,b)=>a.date.localeCompare(b.date)));setEditingAirport(null);}
@@ -138,7 +138,7 @@ export default function App() {
     const data={description:desc,amount:+newActivity.amount,expenses:+newActivity.expenses||0,excludeFromOwed:!!newActivity.excludeFromOwed,dateFrom:newActivity.date||today(),dateTo:""};
     const item=await addItem("activities",data);
     setActivities(prev=>[...prev,item].sort((a,b)=>(a.dateFrom||"").localeCompare(b.dateFrom||"")));
-    setNewActivity({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:today(),customDescription:"",expenses:0});
+    setNewActivity({description:"Hebrew lesson",amount:"35",excludeFromOwed:false,date:today(),customDescription:"",expenses:""});
     showToast("✅ Activity added!","#a78bfa");
   }
   async function saveActivityEdit(updated){
@@ -240,7 +240,7 @@ function QuickLogHours({newSession,setNewSession,addSession,onClose}){
         </div>
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
-          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} placeholder="0" onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
           <Field label="🕐 Start"><input style={S.input} type="time" value={newSession.startTime} onChange={e=>setNewSession(p=>({...p,startTime:e.target.value}))}/></Field>
           <Field label="🕔 End"><input style={S.input} type="time" value={newSession.endTime} onChange={e=>setNewSession(p=>({...p,endTime:e.target.value}))}/></Field>
         </div>
@@ -439,7 +439,7 @@ function LogHours({newSession,setNewSession,addSession,recentSessions,allSession
         </div>
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newSession.date} onChange={e=>setNewSession(p=>({...p,date:e.target.value}))}/></Field>
-          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newSession.other} placeholder="0" onChange={e=>setNewSession(p=>({...p,other:e.target.value.replace(",",".")}))}/></Field>
           <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
               <span style={{...S.label,display:"block"}}>🕐 Start</span>
@@ -488,7 +488,7 @@ function LogAirport({newAirport,setNewAirport,addAirport,recentAirports,allAirpo
         <div style={S.formGrid}>
           <Field label="📅 Date"><input style={S.input} type="date" value={newAirport.date} onChange={e=>setNewAirport(p=>({...p,date:e.target.value}))}/></Field>
           <Field label="🛫 Airport"><select style={S.input} value={newAirport.airport} onChange={e=>setNewAirport(p=>({...p,airport:e.target.value}))}>{Object.keys(AIRPORTS).map(a=><option key={a}>{a}</option>)}</select></Field>
-          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newAirport.parking} onChange={e=>setNewAirport(p=>({...p,parking:e.target.value}))}/></Field>
+          <Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={newAirport.parking} placeholder="0" onChange={e=>setNewAirport(p=>({...p,parking:e.target.value}))}/></Field>
         </div>
         <div style={S.preview}><span>{newAirport.airport} Airport</span><span style={S.previewAmt}>{fmtEuro(info.earned)}</span></div>
         <button style={S.primaryBtn} onClick={addAirport}>Add Trip 🐾</button>
@@ -551,7 +551,7 @@ function LogActivity({newActivity,setNewActivity,addActivity,activities,deleteIt
             <input style={S.input} type="date" value={newActivity.date||today()} onChange={e=>setNewActivity(p=>({...p,date:e.target.value}))}/>
           </Field>
           <Field label="💰 Expenses (€)">
-            <input style={S.input} type="number" min="0" step="0.01" placeholder="0" value={newActivity.expenses||0} onChange={e=>setNewActivity(p=>({...p,expenses:e.target.value.replace(",",".")}))}/>
+            <input style={S.input} type="number" min="0" step="0.01" placeholder="0" value={newActivity.expenses} placeholder="0" onChange={e=>setNewActivity(p=>({...p,expenses:e.target.value.replace(",",".")}))}/>
           </Field>
         </div>
         <label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:newActivity.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1.5px solid ${newActivity.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}>
@@ -699,7 +699,7 @@ function EditModal({session,onSave,onClose}){
   const[form,setForm]=useState({...session});
   function ch(s,e){if(!s||!e)return 0;const[sh,sm]=s.split(":").map(Number);const[eh,em]=e.split(":").map(Number);return Math.max(0,((eh*60+em)-(sh*60+sm))/60);}
   const hrs=ch(form.startTime,form.endTime);const rate=rateForDate(form.date);
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="💰 Expenses"><input style={S.input} type="number" min="0" step="0.01" value={form.other} onChange={e=>setForm(p=>({...p,other:+e.target.value.replace(",",".")}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><Field label="🕔 End"><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></Field></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Session</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📅 Date"><input style={S.input} type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></Field><Field label="💰 Expenses"><input style={S.input} type="number" min="0" step="0.01" value={form.other||""} placeholder="0" onChange={e=>setForm(p=>({...p,other:+e.target.value.replace(",",".")}))}/></Field><Field label="🕐 Start"><input style={S.input} type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))}/></Field><Field label="🕔 End"><input style={S.input} type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))}/></Field></div><div style={S.preview}><span>{hrs.toFixed(2)} hrs × €{rate}/hr</span><span style={S.previewAmt}>{fmtEuro(hrs*rate)}</span></div><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#e8f5f0",color:"#3a8a6a",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave({...form,hours:hrs,earned:+(hrs*rate).toFixed(4),rate})}>Save 🐾</button></div></div></div>);
 }
 
 function EditAirportModal({airport,onSave,onClose}){
@@ -714,7 +714,7 @@ function EditPaymentModal({payment,onSave,onClose}){
 
 function EditActivityModal({activity,onSave,onClose}){
   const[form,setForm]=useState({...activity});
-  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📝 Description"><input style={{...S.input,color:"#f0edf5"}} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field><Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field><Field label="📅 Date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field><Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.expenses||0} onChange={e=>setForm(p=>({...p,expenses:+e.target.value}))}/></Field></div><label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1px solid ${form.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}><input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#f0a830"}}/><div><div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#f0a830":"#f0edf5"}}>Not paid by regular boss</div><div style={{fontSize:11,color:"#6b6b80"}}>Excludes from "Still Owed" balance</div></div></label><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#2a2a3a",color:"#f0edf5",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
+  return(<div style={S.overlay}><div style={S.modal}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{margin:0,color:"#f472a0",fontSize:16,fontWeight:800}}>✏️ Edit Activity</h3><button style={S.closeBtn} onClick={onClose}>✕</button></div><div style={S.formGrid}><Field label="📝 Description"><input style={{...S.input,color:"#f0edf5"}} type="text" value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></Field><Field label="💶 Amount (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:+e.target.value}))}/></Field><Field label="📅 Date"><input style={S.input} type="date" value={form.dateFrom||""} onChange={e=>setForm(p=>({...p,dateFrom:e.target.value}))}/></Field><Field label="💰 Expenses (€)"><input style={S.input} type="number" min="0" step="0.01" value={form.expenses||""} placeholder="0" onChange={e=>setForm(p=>({...p,expenses:+e.target.value}))}/></Field></div><label style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,cursor:"pointer",padding:"10px 14px",background:form.excludeFromOwed?"#1e1a14":"#12121a",borderRadius:10,border:`1px solid ${form.excludeFromOwed?"#3a2a10":"#2a2a3a"}`}}><input type="checkbox" checked={!!form.excludeFromOwed} onChange={e=>setForm(p=>({...p,excludeFromOwed:e.target.checked}))} style={{width:18,height:18,accentColor:"#f0a830"}}/><div><div style={{fontSize:13,fontWeight:700,color:form.excludeFromOwed?"#f0a830":"#f0edf5"}}>Not paid by regular boss</div><div style={{fontSize:11,color:"#6b6b80"}}>Excludes from "Still Owed" balance</div></div></label><div style={{display:"flex",gap:8}}><button style={{...S.primaryBtn,background:"#2a2a3a",color:"#f0edf5",flex:1}} onClick={onClose}>Cancel</button><button style={{...S.primaryBtn,flex:2}} onClick={()=>onSave(form)}>Save 🐾</button></div></div></div>);
 }
 
 // ── Shared small components ───────────────────────────────────────────────────
