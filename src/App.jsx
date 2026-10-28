@@ -301,8 +301,8 @@ function Dashboard({sessions,airports,payments,activities,totalEarned,totalExpen
       {/* Still owed + last payment - side by side */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
         <div style={{background:"#1a1a24",borderRadius:14,padding:"12px 14px",border:`1px solid ${balance<0?"#3a2a10":"#2a2a3a"}`}}>
-          <span style={{fontSize:10,color:"#6b6b80",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>{balance<0?"Overpaid":"Still owed"}</span>
-          {balance<0&&<div style={{fontSize:9,color:"#f0a830",marginBottom:2}}>Too much paid</div>}
+          <span style={{fontSize:10,color:"#6b6b80",textTransform:"uppercase",letterSpacing:.5,fontWeight:700,display:"block",marginBottom:4}}>{balance<0?"You Owe Him":"He Owes You"}</span>
+          {balance<0&&<div style={{fontSize:9,color:"#f0a830",marginBottom:2}}>You paid more than earned</div>}
           <span style={{fontSize:20,fontWeight:800,color:balance<0?"#f0a830":balance>50?"#f472a0":"#34d399"}}>{fmtEuroRound(Math.abs(balance))}</span>
         </div>
         <div style={{background:"#1e1a2e",borderRadius:14,padding:"12px 14px",border:"1px solid #2a2a4a"}}>
